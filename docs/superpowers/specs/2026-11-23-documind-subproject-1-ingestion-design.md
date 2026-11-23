@@ -62,7 +62,6 @@ To ensure stability, rigorous testing, and incremental delivery, the overall sys
 ```
 DocuMind/
 ├── package.json                    # Monorepo workspaces config
-├── docker-compose.yml              # PostgreSQL (with pgvector) + Redis
 ├── shared/                         # Shared models, DTOs, and Zod schemas
 │   ├── package.json
 │   ├── tsconfig.json
@@ -435,7 +434,7 @@ export interface ApiErrorResponse {
   - Processing job lifecycle state machine tests.
 
 ### 8.2 Manual Verification Checklist
-- [ ] Run `docker compose up -d` to verify PostgreSQL (with `pgvector`) and Redis connect cleanly.
+- [ ] Verify PostgreSQL (with `pgvector`) and Redis connections connect cleanly via environment variables.
 - [ ] Upload sample PDF, DOCX, XLSX, and PPTX documents via UI dropzone.
 - [ ] Verify original file arrives in Cloudinary.
 - [ ] Verify BullMQ worker processes job through *extracting -> chunking -> embedding -> completed*.

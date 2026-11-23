@@ -33,7 +33,6 @@
 
 **Files:**
 - Create: `package.json`
-- Create: `docker-compose.yml`
 - Create: `shared/package.json`
 - Create: `shared/tsconfig.json`
 - Create: `shared/src/types.ts`
@@ -74,7 +73,7 @@ describe('Shared Schemas', () => {
 Run: `npx vitest run shared/tests/schemas.test.ts`
 Expected: FAIL (Cannot find module `../src/schemas` or files not created)
 
-- [ ] **Step 3: Implement Monorepo Scaffolding, Docker Compose, and Shared Package**
+- [ ] **Step 3: Implement Monorepo Scaffolding and Shared Package**
 
 ```json
 // package.json
@@ -98,36 +97,6 @@ Expected: FAIL (Cannot find module `../src/schemas` or files not created)
     "typescript": "^5.7.2"
   }
 }
-```
-
-```yaml
-# docker-compose.yml
-services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: documind-postgres
-    environment:
-      POSTGRES_USER: documind
-      POSTGRES_PASSWORD: documind_password
-      POSTGRES_DB: documind_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    container_name: documind-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
-  redis_data:
 ```
 
 ```json
@@ -256,8 +225,8 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add package.json docker-compose.yml shared/
-git commit -m "feat(shared): add monorepo scaffolding, docker compose, and shared types"
+git add package.json shared/
+git commit -m "feat(shared): add monorepo scaffolding and shared types"
 ```
 
 ---
