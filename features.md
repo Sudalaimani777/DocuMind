@@ -15,12 +15,11 @@
 5. [Module D: Multi-Format Content Extraction Engine](#5-module-d-multi-format-content-extraction-engine)
 6. [Module E: Intelligent Multi-Mode Search Engine](#6-module-e-intelligent-multi-mode-search-engine)
 7. [Module F: AI Document Assistant & RAG Engine](#7-module-f-ai-document-assistant--rag-engine)
-8. [Module G: Document Comparison & Diff Analysis](#8-module-g-document-comparison--diff-analysis)
-9. [Module H: Processing History & Job Observability](#9-module-h-processing-history--job-observability)
-10. [Module I: Pluggable AI Provider Architecture](#10-module-i-pluggable-ai-provider-architecture)
-11. [Module J: System Settings & Administration](#11-module-j-system-settings--administration)
-12. [Security, Integrity & Reliability Safeguards](#12-security-integrity--reliability-safeguards)
-13. [Phase Delivery Roadmap](#13-phase-delivery-roadmap)
+8. [Module G: Processing History & Job Observability](#8-module-g-processing-history--job-observability)
+9. [Module H: Pluggable AI Provider Architecture](#9-module-h-pluggable-ai-provider-architecture)
+10. [Module I: System Settings & Administration](#10-module-i-system-settings--administration)
+11. [Security, Integrity & Reliability Safeguards](#11-security-integrity--reliability-safeguards)
+12. [Phase Delivery Roadmap](#12-phase-delivery-roadmap)
 
 ---
 
@@ -195,38 +194,12 @@ The AI Document Assistant provides an interactive conversational workspace for s
 4. **Anti-Hallucination Guardrails**:
    * System prompt strictly mandates: *"Answer ONLY based on the provided document excerpts. If the context does not contain sufficient information to answer truthfully, state that the information is unavailable in the provided documents."*
    * Eliminates ungrounded speculation.
-5. **Pre-Built Intelligence Actions**:
-   * **Summarize Document**: Generates executive summaries, bulleted takeaways, and key themes.
-   * **Extract Key Entities**: Automatically identifies people, organizations, dates, amounts, and contracts.
-   * **Generate FAQ**: Synthesizes top 5 questions answered by the document.
-6. **Streaming Responses**:
+5. **Streaming Responses**:
    * Streams generation tokens over Server-Sent Events (SSE) or WebSockets for instantaneous, low-latency conversational feedback.
 
 ---
 
-## 8. Module G: Document Comparison & Diff Analysis
-
-The Document Comparison module enables side-by-side analytical evaluation between two documents (e.g., contracts, versions, reports).
-
-### Functional Capabilities
-1. **Document Selection**:
-   * Select Document A and Document B from the library.
-2. **Structural & Content Diff Engine**:
-   * Identifies added text blocks.
-   * Identifies removed text blocks.
-   * Identifies modified / rephrased sections.
-3. **AI-Powered Semantic Comparison Summary**:
-   * Analyzes the structural diff and generates an executive summary answering:
-     * What major terms or clauses were altered?
-     * What risk factors were introduced or removed?
-     * Summary of financial or numerical variations.
-4. **Interactive Comparison UI**:
-   * Split-screen viewer with synchronized scrolling.
-   * Color-coded highlights (Green: Added, Red: Deleted, Amber: Modified).
-
----
-
-## 9. Module H: Processing History & Job Observability
+## 8. Module G: Processing History & Job Observability
 
 A dedicated operational log module for monitoring background ingestion tasks.
 
@@ -242,7 +215,7 @@ A dedicated operational log module for monitoring background ingestion tasks.
 
 ---
 
-## 10. Module I: Pluggable AI Provider Architecture
+## 9. Module H: Pluggable AI Provider Architecture
 
 DocuMind prevents vendor lock-in by providing a unified `AIProvider` contract allowing seamless transitions between Local AI and Cloud AI.
 
@@ -262,7 +235,7 @@ DocuMind prevents vendor lock-in by providing a unified `AIProvider` contract al
 
 ---
 
-## 11. Module J: System Settings & Administration
+## 10. Module I: System Settings & Administration
 
 A centralized administration view for system configuration.
 
@@ -282,7 +255,7 @@ A centralized administration view for system configuration.
 
 ---
 
-## 12. Security, Integrity & Reliability Safeguards
+## 11. Security, Integrity & Reliability Safeguards
 
 1. **Input & MIME Validation**:
    * Inspects magic numbers / file signatures (preventing disguised executables or malicious files).
@@ -302,7 +275,7 @@ A centralized administration view for system configuration.
 
 ---
 
-## 13. Phase Delivery Roadmap
+## 12. Phase Delivery Roadmap
 
 To maintain engineering discipline and prevent unwieldy monolithic generation, DocuMind is organized into 4 sequential sub-projects:
 
@@ -324,10 +297,8 @@ To maintain engineering discipline and prevent unwieldy monolithic generation, D
   * Single-document and cross-document conversational chat.
   * Grounded answer generation with interactive citation badges.
   * Streaming responses (SSE).
-  * Document summarization and entity extraction actions.
   * In-app Local vs Cloud provider switcher.
 
-* **Sub-Project 4: Document Comparison, OCR & Analytics**
-  * Document comparison and diff engine.
+* **Sub-Project 4: Scanned PDF OCR & Dashboard Analytics**
   * Scanned PDF detection and OCR text extraction.
   * Dashboard metrics, usage graphs, and end-to-end polish.

@@ -19,8 +19,7 @@ Organizations and individuals accumulate large volumes of unstructured and semi-
 **DocuMind ("Intelligence Beyond Documents")** is a centralized platform that automatically extracts multi-format documents, generates vector embeddings, and enables:
 1. **Keyword, Semantic & Hybrid Search** with relevance scoring and highlighted snippets.
 2. **Grounded RAG (Retrieval-Augmented Generation) Q&A** with verifiable citations pointing directly to the exact page, slide, sheet, or row.
-3. **Document Comparison** with structural diffing and AI-generated comparative summaries.
-4. **Asynchronous Background Ingestion** using Redis and BullMQ to guarantee high throughput and zero request timeouts.
+3. **Asynchronous Background Ingestion** using Redis and BullMQ to guarantee high throughput and zero request timeouts.
 
 ---
 
@@ -132,19 +131,13 @@ DocuMind uses a **feature-based decoupled architecture** ensuring separation of 
 * **Single-Document Chat**: Ask questions scoped to one document.
 * **Multi-Document Cross-Chat**: Query across the entire document corpus.
 * **Verifiable Citations**: Interactive badges that open a reference drawer showing the exact source text and page/slide/sheet number.
-* **One-Click Pre-Built Actions**: Generate Executive Summary, Extract Key Entities, Generate FAQs.
 
-### 5. Document Comparison Engine
-* Select two documents side-by-side.
-* Automated text difference analysis (Added, Removed, Modified).
-* AI-generated comparative summary highlighting contractual, legal, or numerical changes.
-
-### 6. Processing History & Job Observability
+### 5. Processing History & Job Observability
 * Real-time BullMQ job timeline (*Queued → Extracting → Chunking → Embedding → Completed*).
 * Detailed error logs and failure reasons.
 * One-click "Retry Job" button for failed jobs.
 
-### 7. Settings & AI Provider Config
+### 6. Settings & AI Provider Config
 * Switch between **Local AI (Ollama)** and **Cloud AI (Google Gemini)**.
 * Test connection pings and view active model configurations.
 * Configure chunk size and chunk overlap limits.
@@ -165,14 +158,13 @@ Following our engineering governance, we will execute this in **three structured
                            │ Approved by Mentor
 ┌──────────────────────────▼─────────────────────────────┐
 │  MILESTONE 2: Interactive HTML Mockup Previews         │
-│  • Standalone HTML/CSS mockups for every screen:       │
+│  • Standalone HTML/CSS mockups for core screens:       │
 │    1. Dashboard Page                                   │
 │    2. Document Library & Upload Dropzone               │
 │    3. Intelligent Search Interface (with highlights)   │
 │    4. AI Document Assistant (Chat + Citations)         │
-│    5. Document Comparison Split View                   │
-│    6. Processing History & Retry Drawer                │
-│    7. Settings & Provider Configuration                │
+│    5. Processing History & Retry Drawer                │
+│    6. Settings & Provider Configuration                │
 │  • Clickable prototype for mentor review               │
 └──────────────────────────┬─────────────────────────────┘
                            │ Approved by Mentor
@@ -181,7 +173,7 @@ Following our engineering governance, we will execute this in **three structured
 │  • Sub-Project 1: Foundation & Ingestion Pipeline      │
 │  • Sub-Project 2: Intelligent Multi-Mode Search        │
 │  • Sub-Project 3: RAG Engine & Document Assistant      │
-│  • Sub-Project 4: Document Comparison, OCR & Analytics │
+│  • Sub-Project 4: Scanned PDF OCR & Dashboard Analytics│
 └────────────────────────────────────────────────────────┘
 ```
 
