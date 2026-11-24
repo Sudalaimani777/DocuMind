@@ -115,7 +115,6 @@ DocuMind/
 │   └── DEVELOPMENT_GUIDELINES.md
 ├── AGENTS.md                   # AI Agent System Directives & Engineering Rules
 ├── features.md                 # Product Feature Catalog
-├── MENTOR_PROPOSAL.md          # Approved Proposal & Justifications
 └── README.md                   # Repository Entry Point
 ```
 
