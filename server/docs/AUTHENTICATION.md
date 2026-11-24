@@ -1,77 +1,115 @@
 # Authentication & Authorization Architecture — DocuMind Server
 
 > **Package**: `server/`  
-> **Current Mode**: Single-Tenant Enterprise Workspace with API Key Support  
-> **Roadmap**: Multi-Tenant JWT & Role-Based Access Control (RBAC)
+> **Architecture**: Native Email/Password Authentication with Organization & JWT Cookies  
+> **Security Standard**: `bcrypt` (10 rounds) + HTTP-Only SameSite=Lax JWT Cookies  
+> **Role Model**: Equal Standard Users (Zero RBAC complexity) with Strict Private Document Workspaces
 
 ---
 
-## 1. Current Architecture (MVP Phase)
+## 1. Architectural Principles
 
-DocuMind is currently architected as a **dedicated enterprise workspace** operating within an isolated intranet or authenticated boundary:
-* **Stateless API Design**: The backend maintains no HTTP sessions or session cookies in memory.
-* **Origin Boundary**: Protected via strict CORS origin enforcement (`CORS_ORIGIN`).
-* **Abuse Protection**: Enforced via `express-rate-limit` tracking client IP addresses across upload, search, and AI endpoints.
-* **Service-to-Service API Key**: Incoming requests from external services or automated scrapers authenticate via the `X-API-Key` header:
-
-```typescript
-export function requireApiKey(req: Request, res: Response, next: NextFunction) {
-  const apiKey = req.header('X-API-Key');
-  const configuredKey = process.env.SERVICE_API_KEY;
-
-  if (configuredKey && apiKey !== configuredKey) {
-    throw new UnauthorizedError('Invalid or missing API key.');
-  }
-
-  next();
-}
-```
+1. **Self-Contained & Native**:
+   * No third-party SaaS authentication dependencies (Auth0, Clerk, Firebase).
+   * Fully powered by PostgreSQL (`users` table) and Express middleware.
+2. **Strict Data Isolation (Private Workspaces)**:
+   * Every document, processing job, and chat session belongs to a specific `user_id`.
+   * User A cannot see, search, or chat with User B's documents.
+   * Cryptographic deduplication is enforced per user: `UNIQUE (user_id, sha256_hash)`.
+3. **Equal User Capabilities (No Roles/RBAC)**:
+   * All authenticated users have identical permissions: upload, view documents, search, chat with RAG assistant, view history, and toggle personal settings.
+4. **XSS-Resistant Cookie Delivery**:
+   * JWT tokens are delivered exclusively in `httpOnly`, `Secure` (in production), `SameSite=Lax` cookies.
+   * Zero auth tokens stored in JavaScript `localStorage` or `sessionStorage`.
 
 ---
 
-## 2. Future Multi-Tenant & RBAC Extensibility Roadmap
+## 2. Database Schema (`users` Table)
 
-The database schema and architecture are intentionally prepared for seamless expansion into multi-tenant user authentication:
-
-### 2.1 Planned User Roles & Permissions
-```
-┌────────────────────────────────────────────────────────┐
-│                   ROLE HIERARCHY                       │
-├───────────────┬────────────────────────────────────────┤
-│ ADMIN         │ Full system access, provider config,   │
-│               │ delete documents, retry all jobs       │
-├───────────────┼────────────────────────────────────────┤
-│ ANALYST       │ Upload documents, execute searches,    │
-│               │ chat with documents, export results    │
-├───────────────┼────────────────────────────────────────┤
-│ VIEWER        │ Read-only search and chat access.      │
-│               │ Cannot upload or delete documents      │
-└───────────────┴────────────────────────────────────────┘
-```
-
-### 2.2 Database Schema Migration Path
-When multi-tenancy is activated, the following columns will be added via Drizzle migration:
 ```typescript
-// Future Schema Additions:
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  organization: varchar('organization', { length: 150 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
-  role: varchar('role', { length: 30 }).default('analyst').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
-
-// Adding ownerId to documents table:
-// ownerId: uuid('owner_id').references(() => users.id, { onDelete: 'cascade' })
 ```
 
-### 2.3 JWT Bearer Token Blueprint
+---
+
+## 3. Token Strategy & Lifecycle
+
+* **Access Token**:
+  * Expiration: 1 hour (`60m`).
+  * Payload: `{ sub: user.id, email: user.email, name: user.name, organization: user.organization }`.
+  * Cookie Name: `access_token`.
+* **Refresh Token**:
+  * Expiration: 7 days (`7d`).
+  * Payload: `{ sub: user.id, tokenVersion: 1 }`.
+  * Cookie Name: `refresh_token`.
+
+---
+
+## 4. REST API Endpoints (`/api/v1/auth`)
+
+| Endpoint | Method | Input (Zod Validated) | Description | Response |
+| :--- | :--- | :--- | :--- | :--- |
+| `/api/v1/auth/signup` | `POST` | `name`, `organization`, `email`, `password` | Hashes password with `bcrypt`, creates user, issues auth cookies. | `{ success: true, data: { user } }` |
+| `/api/v1/auth/signin` | `POST` | `email`, `password` | Validates credentials against `bcrypt` hash, issues auth cookies. | `{ success: true, data: { user } }` |
+| `/api/v1/auth/signout` | `POST` | None | Clears `access_token` and `refresh_token` cookies. | `{ success: true, message: "Signed out" }` |
+| `/api/v1/auth/me` | `GET` | Cookie | Decodes access token, returns current user profile on app load. | `{ success: true, data: { user } }` |
+| `/api/v1/auth/refresh` | `POST` | Refresh Cookie | Issues a new 1-hour access token using the 7-day refresh token. | `{ success: true }` |
+
+---
+
+## 5. Authentication Middleware (`requireAuth`)
+
 ```typescript
-export interface JWTPayload {
-  userId: string;
-  email: string;
-  role: 'admin' | 'analyst' | 'viewer';
+// server/src/core/middleware/requireAuth.ts
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { UnauthorizedError } from '../errors/AppError';
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+        name: string;
+        organization: string;
+      };
+    }
+  }
+}
+
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const token = req.cookies?.access_token;
+  if (!token) {
+    throw new UnauthorizedError('Authentication required. Please sign in.');
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
+      sub: string;
+      email: string;
+      name: string;
+      organization: string;
+    };
+
+    req.user = {
+      id: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      organization: payload.organization,
+    };
+
+    next();
+  } catch (err) {
+    throw new UnauthorizedError('Invalid or expired authentication session.');
+  }
 }
 ```
-* **Authentication Middleware**: Verifies `Authorization: Bearer <token>` using `jsonwebtoken`.
-* **RBAC Guard Middleware**: Validates that `req.user.role` satisfies required endpoint permissions (e.g. `authorize(['admin'])` for `POST /api/settings/provider`).

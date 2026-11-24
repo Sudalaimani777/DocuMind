@@ -35,7 +35,94 @@
 
 ---
 
-## 2. Document Management Endpoints
+## 2. Authentication Endpoints (`/api/v1/auth`)
+
+### 2.1 User Registration (Sign Up)
+* **Endpoint**: `POST /api/v1/auth/signup`
+* **Request Payload**:
+```json
+{
+  "name": "Sudalaimani Kannan",
+  "organization": "Acme Corp",
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+```
+* **Success Response (`201 Created`)**:
+  * Sets `access_token` (1h) and `refresh_token` (7d) in `httpOnly` cookies.
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "name": "Sudalaimani Kannan",
+      "organization": "Acme Corp",
+      "email": "user@example.com",
+      "createdAt": "2026-11-24T10:00:00.000Z"
+    }
+  },
+  "message": "Account created successfully."
+}
+```
+
+### 2.2 User Login (Sign In)
+* **Endpoint**: `POST /api/v1/auth/signin`
+* **Request Payload**:
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+```
+* **Success Response (`200 OK`)**:
+  * Sets `access_token` and `refresh_token` in `httpOnly` cookies.
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "name": "Sudalaimani Kannan",
+      "organization": "Acme Corp",
+      "email": "user@example.com"
+    }
+  },
+  "message": "Signed in successfully."
+}
+```
+
+### 2.3 User Logout (Sign Out)
+* **Endpoint**: `POST /api/v1/auth/signout`
+* **Success Response (`200 OK`)**:
+  * Clears auth cookies.
+```json
+{
+  "success": true,
+  "message": "Signed out successfully."
+}
+```
+
+### 2.4 Current User Profile (Session Check)
+* **Endpoint**: `GET /api/v1/auth/me`
+* **Success Response (`200 OK`)**:
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "name": "Sudalaimani Kannan",
+      "organization": "Acme Corp",
+      "email": "user@example.com"
+    }
+  }
+}
+```
+
+---
+
+## 3. Document Management Endpoints
 
 ### 2.1 Upload Document
 * **Endpoint**: `POST /api/documents/upload`
@@ -232,7 +319,138 @@ data: {"stage": "COMPLETED", "progress": 100, "status": "completed"}
 
 ---
 
-## 6. System Healthcheck
+## 6. Chat History Endpoints (`/api/v1/chat/sessions`)
+
+### 6.1 List User Chat Sessions
+* **Endpoint**: `GET /api/v1/chat/sessions`
+* **Success Response (`200 OK`)**:
+```json
+{
+  "success": true,
+  "data": {
+    "sessions": [
+      {
+        "id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+        "title": "Q3 EBITDA Analysis",
+        "documentId": "4a7b9c1d-2e3f-4a5b-6c7d-8e9f0a1b2c3d",
+        "documentTitle": "Quarterly_Financial_Report.xlsx",
+        "messageCount": 6,
+        "createdAt": "2026-11-24T12:00:00.000Z",
+        "updatedAt": "2026-11-24T12:15:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+### 6.2 Get Session Messages (Resume Chat)
+* **Endpoint**: `GET /api/v1/chat/sessions/:id/messages`
+* **Success Response (`200 OK`)**:
+```json
+{
+  "success": true,
+  "data": {
+    "sessionId": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+    "title": "Q3 EBITDA Analysis",
+    "messages": [
+      {
+        "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+        "role": "user",
+        "content": "What were our EBITDA margins?",
+        "createdAt": "2026-11-24T12:00:00.000Z"
+      },
+      {
+        "id": "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+        "role": "assistant",
+        "content": "In Q3, EBITDA margins reached 18.2% [Citation 1].",
+        "citations": [
+          {
+            "badge": "[Citation: Quarterly Financial Report, Sheet: Summary, Rows A14:D18]",
+            "documentId": "4a7b9c1d-2e3f-4a5b-6c7d-8e9f0a1b2c3d",
+            "coordinates": { "sheetName": "Summary", "rowRange": "A14:D18" },
+            "excerpt": "Operating EBITDA Margin: 18.2%"
+          }
+        ],
+        "createdAt": "2026-11-24T12:00:04.000Z"
+      }
+    ]
+  }
+}
+```
+
+### 6.3 Delete Chat Session
+* **Endpoint**: `DELETE /api/v1/chat/sessions/:id`
+* **Success Response (`200 OK`)**:
+```json
+{
+  "success": true,
+  "message": "Chat session deleted successfully."
+}
+```
+
+---
+
+## 7. System Settings Endpoints (`/api/v1/settings`)
+
+### 7.1 Get Active System Settings
+* **Endpoint**: `GET /api/v1/settings`
+* **Success Response (`200 OK`)**:
+```json
+{
+  "success": true,
+  "data": {
+    "activeAiProvider": "gemini",
+    "model": "gemini-1.5-flash",
+    "embeddingModel": "text-embedding-004",
+    "embeddingDimensions": 768,
+    "chunkSize": 600,
+    "chunkOverlap": 100,
+    "ollamaBaseUrl": "http://localhost:11434"
+  }
+}
+```
+
+### 7.2 Update Settings (Switch Provider)
+* **Endpoint**: `PUT /api/v1/settings`
+* **Request Payload**:
+```json
+{
+  "activeAiProvider": "ollama",
+  "ollamaBaseUrl": "http://localhost:11434"
+}
+```
+* **Success Response (`200 OK`)**:
+```json
+{
+  "success": true,
+  "message": "Settings updated successfully."
+}
+```
+
+### 7.3 Test Provider Connection
+* **Endpoint**: `POST /api/v1/settings/test-connection`
+* **Request Payload**:
+```json
+{
+  "provider": "ollama"
+}
+```
+* **Success Response (`200 OK`)**:
+```json
+{
+  "success": true,
+  "data": {
+    "status": "connected",
+    "latencyMs": 42,
+    "provider": "ollama",
+    "model": "nomic-embed-text"
+  }
+}
+```
+
+---
+
+## 8. System Healthcheck
 * **Endpoint**: `GET /api/health`
 * **Success Response (`200 OK`)**:
 ```json

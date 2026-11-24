@@ -40,7 +40,7 @@ import {
   char, 
   customType, 
   index, 
-  uniqueIndex 
+  unique 
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
@@ -57,8 +57,19 @@ export const vector768 = customType<{ data: number[] }>({
   },
 });
 
+export const users = pgTable('users', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  organization: varchar('organization', { length: 150 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const documents = pgTable('documents', {
   id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: varchar('title', { length: 255 }).notNull(),
   originalFilename: varchar('original_filename', { length: 255 }).notNull(),
   fileType: varchar('file_type', { length: 20 }).notNull(),
@@ -72,7 +83,8 @@ export const documents = pgTable('documents', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
-  sha256Idx: uniqueIndex('idx_documents_sha256').on(table.sha256Hash),
+  userSha256Unique: unique('uq_user_document_sha256').on(table.userId, table.sha256Hash),
+  userIdIdx: index('idx_documents_user_id').on(table.userId),
   statusIdx: index('idx_documents_status').on(table.status),
   fileTypeIdx: index('idx_documents_file_type').on(table.fileType),
 }));
@@ -90,12 +102,10 @@ export const documentChunks = pgTable('document_chunks', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   documentIdIdx: index('idx_chunks_doc_id').on(table.documentId),
-  // HNSW Cosine Similarity Index
   hnswVectorIdx: index('idx_chunks_hnsw').using(
     'hnsw',
     sql`${table.embedding} vector_cosine_ops WITH (m = 16, ef_construction = 64)`
   ),
-  // Full-Text Search GIN Index
   ftsGinIdx: index('idx_chunks_fts').using(
     'gin',
     sql`to_tsvector('english', ${table.content})`
@@ -107,6 +117,9 @@ export const processingJobs = pgTable('processing_jobs', {
   documentId: uuid('document_id')
     .notNull()
     .references(() => documents.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   status: varchar('status', { length: 30 }).default('queued').notNull(),
   stage: varchar('stage', { length: 50 }).default('QUEUED').notNull(),
   progress: integer('progress').default(0).notNull(),
@@ -117,11 +130,44 @@ export const processingJobs = pgTable('processing_jobs', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   documentIdIdx: index('idx_jobs_doc_id').on(table.documentId),
+  userIdIdx: index('idx_jobs_user_id').on(table.userId),
   statusIdx: index('idx_jobs_status').on(table.status),
 }));
 
+export const chatSessions = pgTable('chat_sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  documentId: uuid('document_id').references(() => documents.id, { onDelete: 'set null' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index('idx_chat_sessions_user_id').on(table.userId),
+}));
+
+export const chatMessages = pgTable('chat_messages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sessionId: uuid('session_id').notNull().references(() => chatSessions.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 20 }).notNull(),
+  content: text('content').notNull(),
+  citations: jsonb('citations').default([]).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  sessionIdIdx: index('idx_chat_messages_session_id').on(table.sessionId),
+}));
+
 // Drizzle Relations
-export const documentsRelations = relations(documents, ({ many }) => ({
+export const usersRelations = relations(users, ({ many }) => ({
+  documents: many(documents),
+  jobs: many(processingJobs),
+  chatSessions: many(chatSessions),
+}));
+
+export const documentsRelations = relations(documents, ({ one, many }) => ({
+  user: one(users, {
+    fields: [documents.userId],
+    references: [users.id],
+  }),
   chunks: many(documentChunks),
   jobs: many(processingJobs),
 }));
@@ -130,6 +176,25 @@ export const documentChunksRelations = relations(documentChunks, ({ one }) => ({
   document: one(documents, {
     fields: [documentChunks.documentId],
     references: [documents.id],
+  }),
+}));
+
+export const chatSessionsRelations = relations(chatSessions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [chatSessions.userId],
+    references: [users.id],
+  }),
+  document: one(documents, {
+    fields: [chatSessions.documentId],
+    references: [documents.id],
+  }),
+  messages: many(chatMessages),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  session: one(chatSessions, {
+    fields: [chatMessages.sessionId],
+    references: [chatSessions.id],
   }),
 }));
 ```
@@ -196,11 +261,11 @@ export async function searchLexical(queryText: string, limit = 10) {
 
 ```bash
 # 1. Generate SQL migration files from schema changes
-pnpm --filter server db:generate
+npm run db:generate --workspace=server
 
 # 2. Apply migrations to PostgreSQL
-pnpm --filter server db:migrate
+npm run db:migrate --workspace=server
 
 # 3. Launch Drizzle Studio GUI for visual table inspection
-pnpm --filter server db:studio
+npm run db:studio --workspace=server
 ```

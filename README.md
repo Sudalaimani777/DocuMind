@@ -124,7 +124,7 @@ DocuMind/
 
 ### System Requirements
 * **Node.js**: `v20.x` or higher
-* **Package Manager**: `pnpm` (`v9.x` recommended)
+* **Package Manager**: `npm` (`v10.x` recommended, standard Node.js package manager)
 * **PostgreSQL**: `v16.x` with `pgvector` extension enabled
 * **Redis**: `v7.x` (running on `localhost:6379`)
 * **AI Provider** (One of the following):
@@ -165,13 +165,13 @@ VITE_SSE_URL=http://localhost:5000/api/jobs
 
 ```bash
 # 1. Install dependencies across monorepo
-pnpm install
+npm install
 
 # 2. Push database schema migrations
-pnpm --filter server db:migrate
+npm run db:migrate --workspace=server
 
 # 3. Start development servers concurrently
-pnpm dev
+npm run dev
 ```
 * **Frontend**: `http://localhost:5173`
 * **Backend API**: `http://localhost:5000`

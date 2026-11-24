@@ -21,7 +21,7 @@ DocuMind operates natively on host servers (Linux, macOS, Windows) or modern clo
 | Component | Minimum Version | Production Recommendations |
 | :--- | :--- | :--- |
 | **Node.js** | `v20.10.0 LTS` | Ensure Node.js is on system `PATH`. |
-| **Package Manager** | `pnpm v9.x` | High-speed hard-linked dependency caching. |
+| **Package Manager** | `npm v10.x` | Standard Node.js package manager with workspaces. |
 | **PostgreSQL** | `v16.x` | Must have `pgvector` extension installed (`CREATE EXTENSION vector;`). |
 | **Redis** | `v7.x` | Minimum 256MB memory with persistence enabled (AOF or RDB). |
 | **AI Provider** | Cloud / Local | Gemini API Key (recommended for cloud production) or local Ollama. |
@@ -66,16 +66,16 @@ VITE_SSE_URL=https://api.documind.yourdomain.com/api/jobs
 
 ```bash
 # 1. Install production dependencies
-pnpm install --frozen-lockfile
+npm ci
 
 # 2. Run Drizzle database migrations
-pnpm --filter server db:migrate
+npm run db:migrate --workspace=server
 
 # 3. Build Backend (Compiles TypeScript to dist/)
-pnpm --filter server build
+npm run build --workspace=server
 
 # 4. Build Frontend (Produces optimized static assets in dist/)
-pnpm --filter client build
+npm run build --workspace=client
 ```
 
 ---

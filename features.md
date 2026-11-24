@@ -9,17 +9,19 @@
 
 ## Table of Contents
 1. [Platform Overview & Philosophy](#1-platform-overview--philosophy)
-2. [Module A: Dashboard & Analytics](#2-module-a-dashboard--analytics)
-3. [Module B: Document Management & Secure Storage](#3-module-b-document-management--secure-storage)
-4. [Module C: Document Ingestion & Background Processing Engine](#4-module-c-document-ingestion--background-processing-engine)
-5. [Module D: Multi-Format Content Extraction Engine](#5-module-d-multi-format-content-extraction-engine)
-6. [Module E: Intelligent Multi-Mode Search Engine](#6-module-e-intelligent-multi-mode-search-engine)
-7. [Module F: AI Document Assistant & RAG Engine](#7-module-f-ai-document-assistant--rag-engine)
-8. [Module G: Processing History & Job Observability](#8-module-g-processing-history--job-observability)
-9. [Module H: Pluggable AI Provider Architecture](#9-module-h-pluggable-ai-provider-architecture)
-10. [Module I: System Settings & Administration](#10-module-i-system-settings--administration)
-11. [Security, Integrity & Reliability Safeguards](#11-security-integrity--reliability-safeguards)
-12. [Phase Delivery Roadmap](#12-phase-delivery-roadmap)
+2. [Module 0: User Authentication & Private Workspaces](#2-module-0-user-authentication--private-workspaces)
+3. [Module A: Dashboard & Analytics](#3-module-a-dashboard--analytics)
+4. [Module B: Document Management & Secure Storage](#4-module-b-document-management--secure-storage)
+5. [Module C: Document Ingestion & Background Processing Engine](#5-module-c-document-ingestion--background-processing-engine)
+6. [Module D: Multi-Format Content Extraction Engine](#6-module-d-multi-format-content-extraction-engine)
+7. [Module E: Intelligent Multi-Mode Search Engine](#7-module-e-intelligent-multi-mode-search-engine)
+8. [Module F: AI Document Assistant & Grounded RAG](#8-module-f-ai-document-assistant--grounded-rag)
+9. [Module G: Chat History & Historical Sessions](#9-module-g-chat-history--historical-sessions)
+10. [Module H: Processing History & Job Observability](#10-module-h-processing-history--job-observability)
+11. [Module I: Pluggable AI Provider Architecture](#11-module-i-pluggable-ai-provider-architecture)
+12. [Module J: System Settings & Administration](#12-module-j-system-settings--administration)
+13. [Security, Integrity & Reliability Safeguards](#13-security-integrity--reliability-safeguards)
+14. [Phase Delivery Roadmap](#14-phase-delivery-roadmap)
 
 ---
 
@@ -31,11 +33,33 @@ DocuMind is an enterprise-grade document intelligence platform that transforms s
 * **Evidence-Grounded Intelligence:** AI responses must be strictly anchored to verified document excerpts. Hallucinations are barred; if content is absent, the system explicitly reports that the information cannot be found.
 * **Deterministic Traceability:** Every chunk, embedding, and AI answer maintains strict coordinate metadata pointing back to the original document location.
 * **Decoupled Asynchrony:** Heavy computational tasks (extraction, chunking, embedding generation) execute in background worker queues (BullMQ + Redis), ensuring UI responsiveness and zero request timeouts.
-* **Zero AI Slop:** A disciplined, clean enterprise design system utilizing a Deep Navy (`#0B192C`) and Electric Blue (`#0066FF`) aesthetic, eliminating generic AI design clichés, excessive gradients, and uninformative animations.
+* **Zero AI Slop:** A disciplined, clean enterprise design system utilizing Swiss precision and flat material warmth (Pure White `#FFFFFF`, Charcoal `#222222`, 1px borders `#DDDDDD`, and Primary Coral `#FF385C`), eliminating generic AI design clichés, excessive gradients, and uninformative animations.
 
 ---
 
-## 2. Module A: Dashboard & Analytics
+## 2. Module 0: User Authentication & Private Workspaces
+
+The platform provides self-contained, native authentication with zero role complexity. Every registered user is an equal, standard user with a private, isolated document workspace.
+
+### Functional Capabilities
+1. **User Registration (Sign Up `/signup`)**:
+   * Collects Full Name, Organization name, Work Email, and Password.
+   * Enforces lowercase email uniqueness and password strength (minimum 8 characters).
+   * Hashes passwords using `bcrypt` (10 rounds).
+2. **User Authentication (Sign In `/signin`)**:
+   * Authenticates credentials against the stored `bcrypt` hash.
+   * Issues JWT Access Token (1 hour) and Refresh Token (7 days) delivered in `httpOnly`, `SameSite=Lax` cookies.
+3. **Session Management & Sign Out (`/api/v1/auth/signout`)**:
+   * Silent session restore on application load via `GET /api/v1/auth/me`.
+   * Secure cookie clearing upon logout.
+4. **Strict Document & Search Data Isolation**:
+   * Every document record references `user_id` (`documents.user_id REFERENCES users(id)`).
+   * Cryptographic SHA-256 deduplication is scoped per-user: `UNIQUE (user_id, sha256_hash)`.
+   * Chunks, vector searches, RAG queries, and chat history sessions are strictly isolated to the authenticated user.
+
+---
+
+## 3. Module A: Dashboard & Analytics
 
 The Dashboard serves as the central command center for the single administrator, presenting operational health metrics, document statistics, and system activity.
 
@@ -176,7 +200,7 @@ DocuMind provides three distinct search paradigms to satisfy different user inte
 
 ---
 
-## 7. Module F: AI Document Assistant & RAG Engine
+## 8. Module F: AI Document Assistant & Grounded RAG
 
 The AI Document Assistant provides an interactive conversational workspace for synthesizing and extracting insights from single or multiple documents.
 
@@ -195,11 +219,29 @@ The AI Document Assistant provides an interactive conversational workspace for s
    * System prompt strictly mandates: *"Answer ONLY based on the provided document excerpts. If the context does not contain sufficient information to answer truthfully, state that the information is unavailable in the provided documents."*
    * Eliminates ungrounded speculation.
 5. **Streaming Responses**:
-   * Streams generation tokens over Server-Sent Events (SSE) or WebSockets for instantaneous, low-latency conversational feedback.
+   * Streams generation tokens over Server-Sent Events (SSE) for instantaneous, low-latency conversational feedback.
 
 ---
 
-## 8. Module G: Processing History & Job Observability
+## 9. Module G: Chat History & Historical Sessions
+
+A dedicated workspace (`/history`) providing complete persistence, inspection, and resumption of past RAG conversations.
+
+### Functional Capabilities
+1. **Session Persistence**:
+   * Saves every conversation thread in PostgreSQL (`chat_sessions`), automatically deriving a concise title from the initial user prompt.
+   * Scoped strictly to the authenticated `user_id`.
+2. **Message & Citation History**:
+   * Persists every user query and grounded assistant response along with structured citation metadata (`chat_messages`).
+3. **Historical Catalog & Resumption**:
+   * Filterable list of past conversations displaying session title, creation date, message count, and linked document (if single-document scoped).
+   * One-click session resumption returning to `/chat` with full conversational context restored.
+4. **Session Deletion**:
+   * Allows users to delete individual chat sessions, cleanly cascading message records.
+
+---
+
+## 10. Module H: Processing History & Job Observability
 
 A dedicated operational log module for monitoring background ingestion tasks.
 
@@ -215,7 +257,7 @@ A dedicated operational log module for monitoring background ingestion tasks.
 
 ---
 
-## 9. Module H: Pluggable AI Provider Architecture
+## 11. Module I: Pluggable AI Provider Architecture
 
 DocuMind prevents vendor lock-in by providing a unified `AIProvider` contract allowing seamless transitions between Local AI and Cloud AI.
 
@@ -227,7 +269,7 @@ DocuMind prevents vendor lock-in by providing a unified `AIProvider` contract al
   * LLM: `llama3.1:8b` or `mistral:7b`
   * Zero external API costs, complete air-gapped privacy.
 * **Cloud Provider**:
-  * Host: Google Gemini API (or OpenAI)
+  * Host: Google Gemini API
   * Embeddings: `text-embedding-004` (768 dimensions)
   * LLM: `gemini-1.5-flash` or `gemini-1.5-pro`
   * High-speed batch processing, scalable cloud capacity.
@@ -235,9 +277,9 @@ DocuMind prevents vendor lock-in by providing a unified `AIProvider` contract al
 
 ---
 
-## 10. Module I: System Settings & Administration
+## 12. Module J: System Settings & Administration
 
-A centralized administration view for system configuration.
+A centralized administration view (`/settings`) for system configuration and observability.
 
 ### Functional Capabilities
 1. **AI Configuration**:
@@ -255,50 +297,52 @@ A centralized administration view for system configuration.
 
 ---
 
-## 11. Security, Integrity & Reliability Safeguards
+## 13. Security, Integrity & Reliability Safeguards
 
 1. **Input & MIME Validation**:
    * Inspects magic numbers / file signatures (preventing disguised executables or malicious files).
    * Strict Zod schema validation across all API query params, route parameters, and request bodies.
 2. **Credential Isolation**:
-   * All secrets (`CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `GEMINI_API_KEY`, `DATABASE_URL`, `REDIS_URL`) reside in server environment variables.
+   * All secrets (`CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `GEMINI_API_KEY`, `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`) reside in server environment variables.
    * Zero secrets or tokens are ever bundled or exposed in client builds.
 3. **Prompt Injection & Context Isolation**:
    * Document chunks are treated strictly as untrusted data inputs within prompt templates.
    * System prompts use structural delimiters (`<document_context>...</document_context>`) to separate instructions from document text.
 4. **Data Cascading & Relational Integrity**:
    * Foreign keys utilize `ON DELETE CASCADE`.
-   * SHA-256 unique index prevents duplicates.
+   * Composite constraint `UNIQUE(user_id, sha256_hash)` prevents duplicate file uploads per user.
 5. **Graceful Error Handling**:
    * Standardized JSON error format (`{ success: false, error: { code, message, details } }`).
    * Express async error wrapping ensures no uncaught exceptions crash the process.
 
 ---
 
-## 12. Phase Delivery Roadmap
+## 14. Phase Delivery Roadmap
 
 To maintain engineering discipline and prevent unwieldy monolithic generation, DocuMind is organized into 4 sequential sub-projects:
 
-* **Sub-Project 1: Foundation & Document Ingestion Pipeline** *(Current Scope)*
-  * Project scaffolding (React + Vite + Tailwind + shadcn/ui; Express + TypeScript + Drizzle ORM).
-  * PostgreSQL + `pgvector` database setup with migrations.
-  * Cloudinary integration, SHA-256 duplicate detection, Redis + BullMQ worker queue.
+* **Sub-Project 1: Foundation, User Authentication & Document Ingestion Pipeline** *(Current Scope)*
+  * Monorepo workspaces (`shared/`, `server/`, `client/`) with shared types and Zod validation schemas.
+  * Native User Authentication (`users` table, Organization profile field, `bcrypt` hashing, JWT in HTTP-only cookies, `requireAuth` middleware).
+  * PostgreSQL + `pgvector` database setup with Drizzle ORM migrations and user-scoped data isolation.
+  * Cloudinary integration, per-user SHA-256 duplicate detection, Redis + BullMQ worker queue.
   * Multi-format parsers (PDF, Word, Excel, PowerPoint) with source coordinate retention.
   * Recursive chunking & pluggable AI embedding engine (768-dim Ollama/Gemini).
-  * Frontend document library, drag-and-drop upload queue, and processing history drawer.
+  * Frontend document library, drag-and-drop upload queue, and processing progress integration.
 
-* **Sub-Project 2: Intelligent Multi-Mode Search Engine**
+* **Sub-Project 2: Search Repository Engine**
   * PostgreSQL Full-Text Search (keyword indexing & highlighted snippets).
   * Vector semantic search (`pgvector` cosine similarity with HNSW).
   * Hybrid search with Reciprocal Rank Fusion (RRF).
-  * Filter bars (format, dates, categories, tags) and search UI.
+  * Filter bars (format, dates, categories, tags) and search repository screen (`/search`).
 
-* **Sub-Project 3: RAG Engine & AI Document Assistant**
-  * Single-document and cross-document conversational chat.
-  * Grounded answer generation with interactive citation badges.
+* **Sub-Project 3: Grounded RAG Assistant & Chat History**
+  * Single-document and cross-document conversational chat (`/chat`).
+  * Grounded answer generation with interactive citation badges linking to source coordinates.
   * Streaming responses (SSE).
-  * In-app Local vs Cloud provider switcher.
+  * Chat History screen (`/history`) with persistent `chat_sessions` and `chat_messages` in PostgreSQL.
 
 * **Sub-Project 4: Scanned PDF OCR & Dashboard Analytics**
   * Scanned PDF detection and OCR text extraction.
+  * Settings & Observability screen (`/settings`) with live provider switching and latency diagnostics.
   * Dashboard metrics, usage graphs, and end-to-end polish.
