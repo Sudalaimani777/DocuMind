@@ -7,19 +7,19 @@
 
 ## 1. Monorepo Principles & Workspace Management
 
-DocuMind is structured as a **pnpm monorepo** with shared configuration across decoupled packages:
-* Root `package.json` coordinates shared scripts and tooling.
+DocuMind is structured as an **npm monorepo** with shared configuration across decoupled packages:
+* Root `package.json` coordinates shared scripts and tooling via `workspaces`.
 * `client/` owns all frontend React code.
 * `server/` owns Express backend API and BullMQ worker code.
 
 ### Dependency Management Rules
-* **Always** use workspace filtering when adding packages:
+* **Always** use workspace arguments when adding packages:
   ```bash
   # Add dependency to server
-  pnpm --filter server add <package-name>
+  npm install <package-name> --workspace=server
 
   # Add dev dependency to client
-  pnpm --filter client add -D <package-name>
+  npm install -D <package-name> --workspace=client
   ```
 * Never install application dependencies in the monorepo root. Root dependencies are strictly reserved for linting, formatters, and workspace orchestration.
 
@@ -129,11 +129,11 @@ export class ConflictError extends AppError {
 Before opening PRs or merging code, execute:
 ```bash
 # 1. Run typecheck across entire monorepo
-pnpm -r exec tsc --noEmit
+npm run typecheck --workspaces
 
 # 2. Run test suites
-pnpm test
+npm test --workspaces
 
 # 3. Verify clean production build
-pnpm build
+npm run build --workspaces
 ```

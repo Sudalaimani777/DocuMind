@@ -25,7 +25,7 @@ Your objective is to produce **clean, production-grade, highly resilient code** 
 4. **NO CODE TRUNCATION OR PLACEHOLDERS**:
    * Never output `// TODO: Implement later`, `/* ...rest of code */`, or mock placeholders in production files. Deliver complete, working, runnable implementations.
 5. **EVIDENCE-BASED VERIFICATION**:
-   * Never declare a task complete, fixed, or passing without executing real verification commands (`pnpm test`, `pnpm build`, `tsc --noEmit`) and verifying zero exit codes.
+   * Never declare a task complete, fixed, or passing without executing real verification commands (`npm test`, `npm run build`, `tsc --noEmit`) and verifying zero exit codes.
 6. **NO DIRECT COMMITS OR PUSHES WITHOUT DEVELOPER APPROVAL**:
    * Autonomous `git commit` and `git push` are **STRICTLY PROHIBITED**.
    * Whenever the agent makes any changes, additions, or updates, it must **NEVER** directly commit or push to GitHub.
@@ -43,7 +43,7 @@ DocuMind/
 └── docs/       # Master Architectural Documentation
 ```
 * The `client/` and `server/` packages are decoupled. Shared types must be synchronized or maintained in a dedicated contract schema.
-* Dependencies must be installed using `pnpm` workspaces (`pnpm --filter <workspace> add <package>`).
+* Dependencies must be installed using `npm` workspaces (`npm install <package> --workspace=<workspace>`).
 
 ### B. Backend Layering Rules (`server/`)
 * **Controllers**: Handle HTTP routing, validate request schemas via **Zod**, and delegate immediately to services. No SQL queries or business logic in controllers.
@@ -95,7 +95,7 @@ DocuMind/
 ## 6. Verification Checklist Before Hand-off
 
 Before reporting any milestone or task complete:
-1. Run TypeScript typecheck: `pnpm --filter <workspace> tsc --noEmit`
-2. Run test suites: `pnpm test`
+1. Run TypeScript typecheck: `npm run typecheck --workspace=<workspace>` (or `npx -w <workspace> tsc --noEmit`)
+2. Run test suites: `npm test`
 3. Verify that zero Docker or container configs were introduced.
 4. Verify that documentation files were updated to reflect any architectural or schema adjustments.

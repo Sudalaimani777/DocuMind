@@ -62,7 +62,7 @@
 ## 5. Verification Checklist
 
 Before declaring any backend task or milestone complete:
-1. Run typecheck: `pnpm --filter server tsc --noEmit`
-2. Run test suites: `pnpm --filter server test`
+1. Run typecheck: `npm run typecheck --workspace=server` (or `npx -w server tsc --noEmit`)
+2. Run test suites: `npm test --workspace=server`
 3. Verify zero Docker artifacts were created.
 4. Verify all endpoints are documented in `server/docs/API.md`.

@@ -14,13 +14,14 @@ DocuMind is an AI-powered document intelligence and search platform designed to 
 To ensure stability, rigorous testing, and incremental delivery, the overall system is decomposed into 4 milestones. This specification governs **Sub-Project 1: Foundation & Document Ingestion Pipeline**.
 
 ### Key Deliverables of Sub-Project 1
-1. **Monorepo & Feature-Based Architecture**: React (Vite + TypeScript + Tailwind + shadcn/ui) frontend and Express (Node.js + TypeScript) backend structured as vertical feature slices with a shared typing package.
-2. **Database & Vector Store**: PostgreSQL with `pgvector` extension configured and managed via Drizzle ORM.
-3. **Secure Cloud Storage**: Direct-to-backend multipart upload with Cloudinary SDK storage, SHA-256 duplicate detection, and file validation.
-4. **Asynchronous Background Processing Queue**: Redis and BullMQ job queue for reliable, non-blocking ingestion with automatic exponential backoff retries.
-5. **Multi-Format Extraction Engine**: Native extractors for PDF (`.pdf`), Word (`.docx`, `.doc`), Excel (`.xlsx`, `.xls`), and PowerPoint (`.pptx`, `.ppt`) preserving page, slide, and sheet/row metadata.
-6. **Chunking & Embedding Pipeline**: Recursive character chunker with token overlap and a pluggable `AIProvider` supporting both Local AI (Ollama `nomic-embed-text`) and Cloud AI (Google Gemini `text-embedding-004`) writing 768-dimensional embeddings to PostgreSQL `pgvector`.
-7. **Frontend Ingestion UI**: Enterprise-grade UI (Deep Navy `#0B192C` / Electric Blue `#0066FF`), drag-and-drop multi-file upload, live processing queue with Server-Sent Events (SSE), document library table, and job retry controls.
+1. **User Authentication & Private Workspaces**: Native email/password authentication (Sign Up `/signup`, Sign In `/signin`, Sign Out `/signout`, Session Check `/me`) with mandatory Organization profile field, `bcrypt` password hashing, JWT delivered via secure `httpOnly` cookies, and `requireAuth` middleware.
+2. **Monorepo & Feature-Based Architecture**: React (Vite + TypeScript + Tailwind + shadcn/ui) frontend and Express (Node.js + TypeScript) backend structured as vertical feature slices with a shared typing package (`shared/`).
+3. **Database & Vector Store**: PostgreSQL with `pgvector` extension configured and managed via Drizzle ORM, with data strictly partitioned by `user_id` (`users`, `documents`, `document_chunks`, `processing_jobs`).
+4. **Secure Cloud Storage**: Direct-to-backend multipart upload with Cloudinary SDK storage, per-user SHA-256 duplicate detection `UNIQUE (user_id, sha256_hash)`, and magic byte verification.
+5. **Asynchronous Background Processing Queue**: Redis and BullMQ job queue for reliable, non-blocking ingestion with automatic exponential backoff retries.
+6. **Multi-Format Extraction Engine**: Native extractors for PDF (`.pdf`), Word (`.docx`, `.doc`), Excel (`.xlsx`, `.xls`), and PowerPoint (`.pptx`, `.ppt`) preserving page, slide, and sheet/row metadata.
+7. **Chunking & Embedding Pipeline**: Recursive character chunker with token overlap and a pluggable `AIProvider` supporting both Local AI (Ollama `nomic-embed-text`) and Cloud AI (Google Gemini `text-embedding-004`) writing 768-dimensional embeddings to PostgreSQL `pgvector`.
+8. **Frontend Ingestion UI**: Enterprise-grade UI adhering to Swiss precision & flat material design (Pure White `#FFFFFF`, Charcoal `#222222`, 1px borders `#DDDDDD`, and Primary Coral `#FF385C`), drag-and-drop multi-file upload, live processing queue with Server-Sent Events (SSE), document library table, and job retry controls.
 
 ---
 
@@ -119,11 +120,23 @@ CREATE EXTENSION IF NOT EXISTS "vector";
 ### 3.2 Schema Definition (`server/src/core/db/schema.ts`)
 
 ```typescript
-import { pgTable, uuid, text, timestamp, integer, jsonb, vector, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, integer, jsonb, vector, index, uniqueIndex, unique, varchar } from 'drizzle-orm/pg-core';
 
-// 1. Documents Table
+// 1. Users Table
+export const users = pgTable('users', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  organization: varchar('organization', { length: 150 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// 2. Documents Table
 export const documents = pgTable('documents', {
   id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   originalFilename: text('original_filename').notNull(),
   fileFormat: text('file_format').notNull(), // 'pdf' | 'docx' | 'xlsx' | 'pptx'
@@ -147,12 +160,13 @@ export const documents = pgTable('documents', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
-  uniqueIndex('idx_documents_sha256').on(table.sha256Hash),
+  unique('uq_user_document_sha256').on(table.userId, table.sha256Hash),
+  index('idx_documents_user_id').on(table.userId),
   index('idx_documents_status').on(table.status),
   index('idx_documents_created_at').on(table.createdAt),
 ]);
 
-// 2. Document Chunks Table with Vector Embeddings
+// 3. Document Chunks Table with Vector Embeddings
 export const documentChunks = pgTable('document_chunks', {
   id: uuid('id').defaultRandom().primaryKey(),
   documentId: uuid('document_id')

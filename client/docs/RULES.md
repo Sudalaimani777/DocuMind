@@ -59,7 +59,7 @@
 ## 5. Verification Checklist
 
 Before reporting any frontend milestone or component complete:
-1. Run typecheck: `pnpm --filter client tsc --noEmit`
-2. Run test suites: `pnpm --filter client test`
+1. Run typecheck: `npm run typecheck --workspace=client` (or `npx -w client tsc --noEmit`)
+2. Run test suites: `npm test --workspace=client`
 3. Verify zero console warnings for missing React `key` props.
 4. Verify all routes are registered in `client/docs/ROUTING.md`.
