@@ -26,6 +26,10 @@ Your objective is to produce **clean, production-grade, highly resilient code** 
    * Never output `// TODO: Implement later`, `/* ...rest of code */`, or mock placeholders in production files. Deliver complete, working, runnable implementations.
 5. **EVIDENCE-BASED VERIFICATION**:
    * Never declare a task complete, fixed, or passing without executing real verification commands (`pnpm test`, `pnpm build`, `tsc --noEmit`) and verifying zero exit codes.
+6. **NO DIRECT COMMITS OR PUSHES WITHOUT DEVELOPER APPROVAL**:
+   * Autonomous `git commit` and `git push` are **STRICTLY PROHIBITED**.
+   * Whenever the agent makes any changes, additions, or updates, it must **NEVER** directly commit or push to GitHub.
+   * The agent must always present the changes to the developer and **ASK FIRST**. Only after the developer reviews and explicitly approves may the agent commit and push.
 
 ---
 
@@ -72,7 +76,11 @@ DocuMind/
 
 ## 5. Development & Git Conventions
 
-* **Branching**: All work is tracked against `master` or feature branches.
+* **Branching**: All work is tracked against the active branch (e.g., `Project` or feature branches).
+* **Commit & Push Gate (Human Approval Required)**:
+  * Autonomous `git commit` and `git push` are strictly forbidden.
+  * Whenever the AI makes any modifications, it must summarize the changes and **ASK FIRST**.
+  * Only after the developer explicitly approves may the agent proceed with `git commit` and `git push`.
 * **Commit Messages**: Follow standard Conventional Commits:
   * `feat: <description>` — New feature
   * `fix: <description>` — Bug fix
