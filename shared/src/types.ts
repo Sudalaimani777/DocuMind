@@ -75,3 +75,34 @@ export interface ApiErrorResponse {
   };
   timestamp: string;
 }
+
+export type SearchMode = 'hybrid' | 'semantic' | 'keyword';
+
+export type SearchMatchType = 'lexical' | 'semantic' | 'hybrid';
+
+export interface SearchResultItemDTO {
+  chunkId: string;
+  documentId: string;
+  documentTitle: string;
+  originalFilename: string;
+  fileType: DocumentFormat;
+  storageUrl: string;
+  chunkIndex: number;
+  content: string;
+  snippet: string;
+  coordinates: CoordinatesDTO;
+  score: number;
+  lexicalScore?: number;
+  semanticScore?: number;
+  matchType: SearchMatchType;
+}
+
+export interface SearchResponseDTO {
+  query: string;
+  mode: SearchMode;
+  activeMode: SearchMode;
+  degraded: boolean;
+  totalResults: number;
+  tookMs: number;
+  results: SearchResultItemDTO[];
+}

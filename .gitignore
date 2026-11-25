@@ -10,6 +10,8 @@ dist-ssr
 
 # Phase Tracking Documentation (Local Only)
 docs/phase/
+docs/phase/superpowers/plans
+docs/phase/superpowers/specs
 
 # Logs
 logs

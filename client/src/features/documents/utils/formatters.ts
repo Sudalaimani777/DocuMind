@@ -1,4 +1,4 @@
-import type { CoordinatesDTO } from '@documind/shared';
+export { formatCoordinates } from '../../../core/lib/formatCoordinates';
 
 export function formatFileSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
@@ -14,20 +14,4 @@ export function formatShortDate(isoDate: string): string {
     month: 'short',
     day: 'numeric',
   });
-}
-
-export function formatCoordinates(coords: CoordinatesDTO): string {
-  if (typeof coords.pageNumber === 'number') {
-    return `Page ${coords.pageNumber}`;
-  }
-  if (coords.sheetName) {
-    if (typeof coords.rowStart === 'number' && typeof coords.rowEnd === 'number') {
-      return `Sheet: ${coords.sheetName} · Rows ${coords.rowStart}–${coords.rowEnd}`;
-    }
-    return `Sheet: ${coords.sheetName}`;
-  }
-  if (typeof coords.slideNumber === 'number') {
-    return `Slide ${coords.slideNumber}`;
-  }
-  return 'Document Body';
 }
