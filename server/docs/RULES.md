@@ -10,7 +10,7 @@
 
 1. **ZERO DOCKER**:
    * Do **NOT** create Dockerfiles or docker-compose files.
-   * Connect natively to local or managed PostgreSQL with `pgvector`, Redis, and Cloudinary.
+   * Connect natively to Supabase PostgreSQL with `pgvector`, Redis, and Cloudinary.
 2. **NO TRUNCATION OR PLACEHOLDERS**:
    * Production files must never contain `// TODO: implement later` or `/* rest of code */`. Deliver fully runnable, tested TypeScript code.
 3. **FEATURE SCOPE BOUNDARIES**:

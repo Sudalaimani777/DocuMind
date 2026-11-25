@@ -1,21 +1,17 @@
 # Database & Vector Store Specification — DocuMind Server
 
-> **Database**: PostgreSQL 16+ with `pgvector`  
+> **Database**: Supabase (Managed PostgreSQL 16+ with `pgvector`)  
 > **ORM Layer**: Drizzle ORM  
 > **Target Package**: `server/`
 
 ---
 
-## 1. PostgreSQL & `pgvector` Initialization
+## 1. Supabase PostgreSQL & `pgvector` Initialization
 
-Before running database migrations, PostgreSQL must be initialized with the `vector` extension:
+Before running database migrations, enable the `vector` and `uuid-ossp` extensions in your Supabase project (via **Supabase Dashboard → Database → Extensions** or the **SQL Editor** on the default `postgres` database):
 
 ```sql
--- Connect as superuser
-CREATE DATABASE documind;
-\c documind;
-
--- Enable Vector and UUID extensions
+-- Run in Supabase SQL Editor
 CREATE EXTENSION IF NOT EXISTS "vector";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 

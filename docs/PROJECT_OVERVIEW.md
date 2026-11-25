@@ -79,7 +79,7 @@ Traditional enterprise search systems treat documents as flat text dumps. They s
 
 ### In-Scope (Approved Features)
 1. Monorepo architecture (React 19 + Vite frontend, Express + TypeScript backend).
-2. Direct local/cloud service connections: PostgreSQL with `pgvector`, Redis, Cloudinary.
+2. Direct local/cloud service connections: Supabase PostgreSQL with `pgvector`, Redis, Cloudinary.
 3. Multi-format parsing: PDF, DOCX, XLSX, PPTX with coordinate preservation.
 4. Cryptographic deduplication (SHA-256) and magic-bytes file validation.
 5. Asynchronous BullMQ worker queue with live SSE progress stream.

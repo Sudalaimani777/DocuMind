@@ -56,7 +56,7 @@ The `server/` package is the core computational engine of DocuMind. It owns:
 
 ## 3. Server Non-Functional Requirements (SNFR)
 
-* **SNFR1 (Zero Docker)**: All server processes must run directly via Node.js on the host OS connecting to local or managed PostgreSQL and Redis instances.
+* **SNFR1 (Zero Docker)**: All server processes must run directly via Node.js on the host OS connecting to Supabase (managed PostgreSQL) and local or managed Redis instances.
 * **SNFR2 (Type Safety)**: 100% TypeScript with strict mode enabled. Zero use of `any`.
 * **SNFR3 (Input Validation)**: 100% of incoming HTTP request parameters, query strings, and request bodies must be validated with Zod schemas.
 * **SNFR4 (Fault Resiliency)**: BullMQ worker jobs must feature exponential backoff retry policies (5s, 10s, 20s). Failed jobs must log human-readable stack traces into `processing_jobs.error_log`.

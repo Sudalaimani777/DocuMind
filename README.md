@@ -82,7 +82,7 @@ Organizations accumulate massive volumes of unstructured documents (PDFs, Word d
 | **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui | High-speed SPA with enterprise Deep Navy theme |
 | **State & API** | Zustand, TanStack Query, Axios | Server cache management, local upload state, HTTP client |
 | **Backend API** | Node.js, Express, TypeScript | Modular REST API server with shared types |
-| **Database & Vector** | PostgreSQL with `pgvector`, Drizzle ORM | ACID metadata storage + 768-dim HNSW vector similarity |
+| **Database & Vector** | Supabase (PostgreSQL with `pgvector`), Drizzle ORM | Managed ACID metadata storage + 768-dim HNSW vector similarity |
 | **Queue & Cache** | Redis, BullMQ | Asynchronous job queues and exponential retry handling |
 | **File Storage** | Cloudinary SDK (`raw` resource type) | Secure off-server binary document storage |
 | **Parsers** | `pdf-parse`, `mammoth`, `xlsx`, `pptx2json` | Native coordinate-aware text and table extraction |
@@ -125,7 +125,7 @@ DocuMind/
 ### System Requirements
 * **Node.js**: `v20.x` or higher
 * **Package Manager**: `npm` (`v10.x` recommended, standard Node.js package manager)
-* **PostgreSQL**: `v16.x` with `pgvector` extension enabled
+* **Database**: **Supabase** (Managed PostgreSQL `v16.x` with `pgvector` extension enabled)
 * **Redis**: `v7.x` (running on `localhost:6379`)
 * **AI Provider** (One of the following):
   * **Ollama** installed locally with `nomic-embed-text` (`ollama pull nomic-embed-text`)
@@ -139,7 +139,7 @@ DocuMind/
 ```bash
 PORT=5000
 NODE_ENV=development
-DATABASE_URL=postgres://postgres:password@localhost:5432/documind
+DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true
 REDIS_URL=redis://localhost:6379
 
 # Cloudinary Storage

@@ -10,7 +10,7 @@
 DocuMind operates natively on host servers (Linux, macOS, Windows) or modern cloud platforms without requiring Docker containerization:
 * **Frontend**: Static single-page application built with Vite, deployable to Cloudflare Pages, Vercel, Netlify, or served via Nginx/Express.
 * **Backend API & BullMQ Workers**: Node.js 20+ processes running via a process manager (e.g., **PM2** or systemd).
-* **Database**: PostgreSQL 16+ with `pgvector` (e.g., Neon, Supabase, AWS RDS, or local Postgres).
+* **Database**: Supabase (Managed PostgreSQL 16+ with `pgvector`).
 * **Queue & Cache**: Redis 7+ (e.g., Upstash, Redis Cloud, or local Redis).
 * **Binary Storage**: Cloudinary (managed cloud storage).
 
@@ -22,7 +22,7 @@ DocuMind operates natively on host servers (Linux, macOS, Windows) or modern clo
 | :--- | :--- | :--- |
 | **Node.js** | `v20.10.0 LTS` | Ensure Node.js is on system `PATH`. |
 | **Package Manager** | `npm v10.x` | Standard Node.js package manager with workspaces. |
-| **PostgreSQL** | `v16.x` | Must have `pgvector` extension installed (`CREATE EXTENSION vector;`). |
+| **Database (Supabase)** | `PostgreSQL v16+` | Enable `pgvector` and `uuid-ossp` extensions in Supabase Dashboard or SQL Editor. |
 | **Redis** | `v7.x` | Minimum 256MB memory with persistence enabled (AOF or RDB). |
 | **AI Provider** | Cloud / Local | Gemini API Key (recommended for cloud production) or local Ollama. |
 
@@ -37,8 +37,8 @@ PORT=5000
 NODE_ENV=production
 CORS_ORIGIN=https://documind.yourdomain.com
 
-# Database Connection
-DATABASE_URL=postgres://user:password@db-host.com:5432/documind?sslmode=require
+# Database Connection (Supabase PostgreSQL)
+DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true
 
 # Redis Connection (BullMQ)
 REDIS_URL=redis://default:password@redis-host.com:6379
