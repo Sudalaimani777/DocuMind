@@ -126,7 +126,6 @@ export function SearchView() {
   const hasActiveFilters = Boolean(
     format || startDate || endDate || documentId || minConfidence > 0 || effectiveSelectedFormats.length < 4
   );
-  const activeModeMeta = MODE_OPTIONS.find((m) => m.id === mode) ?? MODE_OPTIONS[0];
 
   const handleFormatToggle = (target: DocumentFormat) => {
     const next = effectiveSelectedFormats.includes(target)
