@@ -8,6 +8,7 @@ import { SignInView } from '../features/auth/views/SignInView';
 import { SignUpView } from '../features/auth/views/SignUpView';
 
 const LibraryView = lazy(() => import('../features/documents/views/LibraryView'));
+const SearchView = lazy(() => import('../features/search/views/SearchView'));
 
 function RouteLoader() {
   return (
@@ -60,11 +61,9 @@ export const router = createBrowserRouter([
       {
         path: 'search',
         element: (
-          <PhaseRoutePlaceholder
-            title="Clause & Document Search Engine"
-            phaseLabel="Phase 2"
-            description="Hybrid RRF lexical + pgvector semantic search arrives in Phase 2."
-          />
+          <Suspense fallback={<RouteLoader />}>
+            <SearchView />
+          </Suspense>
         ),
       },
       {

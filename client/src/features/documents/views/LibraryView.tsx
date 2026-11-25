@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { Upload } from 'lucide-react';
 import type { DocumentFormat, DocumentStatus } from '@documind/shared';
 import { ChunkInspectorDrawer } from '../components/ChunkInspectorDrawer';
 import { DeleteDocumentDialog } from '../components/DeleteDocumentDialog';
@@ -65,15 +64,6 @@ export function LibraryView() {
         </div>
 
         <div className="flex items-center gap-15 shrink-0">
-          <button
-            type="button"
-            disabled={uploadMutation.isPending}
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center justify-center gap-2 px-20 py-15 min-h-[48px] rounded-md bg-secondary text-on-secondary font-t03 text-t03 hover:bg-primary hover:text-on-primary active:scale-[0.98] transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus focus-visible:ring-offset-2 disabled:opacity-60"
-          >
-            <Upload className="w-4 h-4" aria-hidden="true" />
-            <span>Upload Documents</span>
-          </button>
           <input
             ref={fileInputRef}
             type="file"

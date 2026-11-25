@@ -5,6 +5,7 @@ import {
   documentUploadQuerySchema,
   paginationSchema,
   uuidParamSchema,
+  searchQuerySchema,
 } from '../src/schemas.js';
 import type {
   UserDTO,
@@ -212,6 +213,52 @@ describe('Shared Zod Schemas', () => {
 
       expect(ok.success).toBe(true);
       expect(err.success).toBe(false);
+    });
+  });
+
+  describe('searchQuerySchema', () => {
+    it('trims q and applies default mode=hybrid and limit=10', () => {
+      const result = searchQuerySchema.safeParse({ q: '  revenue growth  ' });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.q).toBe('revenue growth');
+        expect(result.data.mode).toBe('hybrid');
+        expect(result.data.limit).toBe(10);
+      }
+    });
+
+    it('accepts valid format, date range, documentId, and coerced limit', () => {
+      const result = searchQuerySchema.safeParse({
+        q: 'operating income',
+        mode: 'semantic',
+        format: 'xlsx',
+        startDate: '2026-01-01',
+        endDate: '2026-11-25',
+        documentId: '1a2b3c4d-5e6f-4a8b-9c0d-1e2f3a4b5c6d',
+        limit: '25',
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.format).toBe('xlsx');
+        expect(result.data.limit).toBe(25);
+        expect(result.data.startDate).toBeInstanceOf(Date);
+        expect(result.data.endDate).toBeInstanceOf(Date);
+      }
+    });
+
+    it('rejects empty query, query over 300 chars, invalid limit, or startDate after endDate', () => {
+      expect(searchQuerySchema.safeParse({ q: '   ' }).success).toBe(false);
+      expect(searchQuerySchema.safeParse({ q: 'a'.repeat(301) }).success).toBe(false);
+      expect(searchQuerySchema.safeParse({ q: 'valid', limit: '51' }).success).toBe(false);
+      expect(
+        searchQuerySchema.safeParse({
+          q: 'valid',
+          startDate: '2026-11-25',
+          endDate: '2026-11-01',
+        }).success
+      ).toBe(false);
     });
   });
 });

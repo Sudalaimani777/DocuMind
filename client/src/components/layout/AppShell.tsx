@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../../core/lib/utils';
 import { useAuthStore } from '../../core/store/authStore';
+import { useSearchStore } from '../../features/search/store/searchStore';
+import { CommandPalette } from './CommandPalette';
 
 interface NavItem {
   to: string;
@@ -51,25 +53,15 @@ function getInitials(name?: string): string {
  */
 export function AppShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [quickSearch, setQuickSearch] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const setCommandPaletteOpen = useSearchStore((s) => s.setCommandPaletteOpen);
 
   const currentTitle =
     ROUTE_TITLES[location.pathname] ??
     (location.pathname.startsWith('/chat/') ? 'AI Chat' : 'Workspace');
-
-  const handleQuickSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = quickSearch.trim();
-    if (!trimmed) {
-      navigate('/search');
-      return;
-    }
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
-  };
 
   const handleSignOut = async () => {
     await logout();
@@ -218,23 +210,20 @@ export function AppShell() {
           </div>
 
           <div className="flex items-center gap-15">
-            <form onSubmit={handleQuickSearch} className="hidden sm:block relative w-72 md:w-80 lg:w-96">
-              <label htmlFor="top-search-input" className="sr-only">
-                Search repository
-              </label>
-              <Search
-                className="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                aria-hidden="true"
-              />
-              <input
-                id="top-search-input"
-                type="search"
-                value={quickSearch}
-                onChange={(e) => setQuickSearch(e.target.value)}
-                placeholder="Search documents, clauses, or ask..."
-                className="w-full pl-9 pr-3 py-1.5 rounded-md bg-surface-subtle border border-outline text-on-surface placeholder:text-on-surface-variant font-t04 text-t04 focus:bg-surface focus:outline-none focus:border-outline-focus focus:ring-1 focus:ring-outline-focus"
-              />
-            </form>
+            <button
+              type="button"
+              onClick={() => setCommandPaletteOpen(true)}
+              aria-label="Open quick search palette"
+              className="hidden sm:flex items-center justify-between gap-2 w-72 md:w-80 lg:w-96 px-3 py-1.5 rounded-md bg-surface-subtle border border-outline text-on-surface-variant hover:bg-surface hover:border-outline-focus font-t04 text-t04 transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <Search className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">Search documents or clauses...</span>
+              </span>
+              <kbd className="px-1.5 py-0.5 rounded-xs border border-outline bg-surface text-on-surface-variant font-mono text-mono-sm shrink-0">
+                ⌘K
+              </kbd>
+            </button>
 
             <Link
               to="/settings"
@@ -251,6 +240,7 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

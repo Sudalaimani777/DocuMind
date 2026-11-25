@@ -2,8 +2,15 @@
     "cSpell.words": [
         "Docu",
         "documind",
+        "extname",
+        "extversion",
         "HNSW",
         "Ollama",
-        "pgvector"
+        "pgvector",
+        "Supabase",
+        "tsquery",
+        "tsvector",
+        "varchar",
+        "websearch"
     ]
 }

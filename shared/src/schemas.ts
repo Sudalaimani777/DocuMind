@@ -52,8 +52,32 @@ export const uuidParamSchema = z.object({
   id: z.string().uuid('Invalid UUID format'),
 });
 
+export const documentFormatSchema = z.enum(['pdf', 'docx', 'xlsx', 'pptx']);
+
+export const searchModeSchema = z.enum(['hybrid', 'semantic', 'keyword']).default('hybrid');
+
+export const searchQuerySchema = z
+  .object({
+    q: z
+      .string()
+      .trim()
+      .min(1, 'Search query is required')
+      .max(300, 'Search query must not exceed 300 characters'),
+    mode: searchModeSchema,
+    format: documentFormatSchema.optional(),
+    startDate: z.coerce.date().optional(),
+    endDate: z.coerce.date().optional(),
+    documentId: z.string().uuid('Invalid documentId UUID').optional(),
+    limit: z.coerce.number().int().min(1).max(50).default(10),
+  })
+  .refine(
+    (data) => !data.startDate || !data.endDate || data.endDate >= data.startDate,
+    { message: 'endDate must be on or after startDate', path: ['endDate'] }
+  );
+
 export type SignupInput = z.infer<typeof signupSchema>;
 export type SigninInput = z.infer<typeof signinSchema>;
 export type DocumentUploadQuery = z.infer<typeof documentUploadQuerySchema>;
 export type PaginationQuery = z.infer<typeof paginationSchema>;
 export type UuidParam = z.infer<typeof uuidParamSchema>;
+export type SearchQueryInput = z.infer<typeof searchQuerySchema>;

@@ -27,12 +27,29 @@ import { DrizzleDocumentRepository } from './features/documents/document.reposit
 import { DocumentService } from './features/documents/document.service.js';
 import { DocumentController } from './features/documents/document.controller.js';
 import { createDocumentsRouter } from './features/documents/document.routes.js';
+import { createAIProvider } from './features/ai/ai.factory.js';
+import { DrizzleSearchRepository } from './features/search/search.repository.js';
+import { LexicalSearchService } from './features/search/lexical.service.js';
+import { SemanticSearchService } from './features/search/semantic.service.js';
+import { HybridSearchService } from './features/search/hybrid.service.js';
+import { SearchService } from './features/search/search.service.js';
+import { SearchController } from './features/search/search.controller.js';
+import { createSearchRouter } from './features/search/search.routes.js';
 
 export interface AppDependencies {
   authService?: AuthService;
   jobService?: JobService;
   documentService?: DocumentService;
+  searchService?: SearchService;
   sseService?: SseService;
+}
+
+function createDefaultSearchService(): SearchService {
+  const searchRepo = new DrizzleSearchRepository();
+  const lexicalService = new LexicalSearchService(searchRepo);
+  const semanticService = new SemanticSearchService(searchRepo, createAIProvider());
+  const hybridService = new HybridSearchService(lexicalService, semanticService);
+  return new SearchService(lexicalService, semanticService, hybridService);
 }
 
 /**
@@ -104,6 +121,10 @@ export function createApp(deps: AppDependencies = {}): Express {
     );
   const documentController = new DocumentController(documentService);
   app.use('/api/v1/documents', createDocumentsRouter(documentController));
+
+  const searchService = deps.searchService ?? createDefaultSearchService();
+  const searchController = new SearchController(searchService);
+  app.use('/api/v1/search', createSearchRouter(searchController));
 
   app.use(errorHandler);
 

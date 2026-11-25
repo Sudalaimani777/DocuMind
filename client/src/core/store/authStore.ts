@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { UserDTO } from '@documind/shared';
+import { queryClient } from '../../app/providers';
 import { getCurrentUser, signOut } from '../../features/auth/api/auth.api';
+import { useSearchStore } from '../../features/search/store/searchStore';
 
 interface AuthState {
   user: UserDTO | null;
@@ -64,6 +66,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await signOut();
     } finally {
+      queryClient.clear();
+      useSearchStore.setState({
+        query: '',
+        mode: 'hybrid',
+        format: undefined,
+        startDate: '',
+        endDate: '',
+        documentId: undefined,
+        selectedResult: null,
+        isCommandPaletteOpen: false,
+      });
       set({
         user: null,
         isAuthenticated: false,
