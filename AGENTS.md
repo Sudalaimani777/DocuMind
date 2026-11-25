@@ -7,7 +7,7 @@
 
 ## 1. Prime Directive & System Mission
 
-You are working on **DocuMind** — an AI-Powered Document Processing & Intelligent Search Platform built with React 19, Express, PostgreSQL (`pgvector`), Redis (`BullMQ`), Cloudinary, and a Pluggable AI engine (Ollama + Google Gemini).
+You are working on **DocuMind** — an AI-Powered Document Processing & Intelligent Search Platform built with React 19, Express, Supabase PostgreSQL (`pgvector`), Redis (`BullMQ`), Cloudinary, and a Pluggable AI engine (Ollama + Google Gemini).
 
 Your objective is to produce **clean, production-grade, highly resilient code** that adheres to strict engineering governance without shortcuts, incomplete placeholders, or architecture violations.
 
@@ -17,7 +17,7 @@ Your objective is to produce **clean, production-grade, highly resilient code** 
 
 1. **ZERO DOCKER**:
    * Do **NOT** introduce `Dockerfile`, `docker-compose.yml`, or containerization tooling.
-   * All services run natively on host machine or connect directly to cloud providers (Local/Cloud PostgreSQL with `pgvector`, Local Redis, Cloudinary API, Local Ollama or Cloud Gemini API).
+   * All services run natively on host machine or connect directly to cloud providers (Supabase PostgreSQL with `pgvector`, Local/Cloud Redis, Cloudinary API, Local Ollama or Cloud Gemini API).
 2. **NO MOCKUP CODE IN APPLICATION REPO**:
    * Do not commit static HTML preview mockups into `client/` or `server/`. Mockups belong strictly in standalone review artifacts outside the application bundle.
 3. **FEATURE SCOPE BOUNDARIES**:

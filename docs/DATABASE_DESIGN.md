@@ -1,6 +1,6 @@
 # Database Design & Schema Specification — DocuMind
 
-> **Database Engine**: PostgreSQL 16+  
+> **Database Engine**: Supabase (Managed PostgreSQL 16+)  
 > **Extensions Required**: `pgvector` (vector cosine search), `uuid-ossp` (UUID generation)  
 > **ORM Layer**: Drizzle ORM (TypeScript)
 
