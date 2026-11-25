@@ -83,31 +83,51 @@ The Express API applies standard security headers:
 * The API only permits requests originating from the explicitly configured frontend origin (`http://localhost:5173` in development, verified domain in production).
 * Credentials and authorization headers are rejected from wildcards (`*`).
 
-### 3.3 Rate Limiting & AI Billing Protection
-To protect against Denial of Service (DoS) and runaway LLM costs:
+### 3.3 Rate Limiting & Abuse Protection (`server/src/core/middleware/rateLimiter.ts`)
+To protect against Denial of Service (DoS), brute force credential attacks, and runaway LLM costs, the platform implements tiered rate limits:
+
 ```typescript
 import rateLimit from 'express-rate-limit';
 
-// General API Rate Limiting
+// 1. General API Rate Limiting (100 req / 15 min per IP)
 export const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300,
-  message: { success: false, error: { message: 'Too many requests, please try again later.' } }
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// Strict AI & Upload Limiting
-export const aiLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 30, // Max 30 RAG queries/minute
-  message: { success: false, error: { message: 'AI query limit reached. Please wait a moment.' } }
+// 2. Authentication Brute-Force Defense (5 attempts / 15 min per IP)
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
+// 3. File Upload Flood Defense (10 uploads / 15 min per IP)
 export const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// 4. AI Query & Cost Protection (20 queries / 1 min per IP/user)
+export const aiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 10, // Max 10 uploads/minute
-  message: { success: false, error: { message: 'Upload limit exceeded.' } }
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 ```
+
+### 3.4 HTTP-Only Cookie Security via `cookie-parser`
+* Auth tokens (`access_token`, `refresh_token`) are delivered and read exclusively via `httpOnly`, `Secure`, `SameSite=Lax` cookies.
+* Frontend JavaScript cannot read the token strings, providing complete immunity to client-side XSS token theft.
+
+### 3.5 Bounded Payload Protection
+* Express body parsers enforce a strict `1MB` payload cap (`express.json({ limit: '1mb' })` and `express.urlencoded({ limit: '1mb' })`) to prevent heap allocation exhaustion. Large files must route exclusively through the Multer memory buffer stream.
 
 ---
 
