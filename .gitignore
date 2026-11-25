@@ -3,6 +3,7 @@ dist/
 dist-ssr
 *.local
 .superpowers/
+.impeccable/
 .env
 .env.local
 *.tsbuildinfo

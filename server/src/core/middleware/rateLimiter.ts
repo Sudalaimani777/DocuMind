@@ -1,4 +1,7 @@
 import rateLimit from 'express-rate-limit';
+import { unifiedConfig } from '../config/unifiedConfig.js';
+
+const skipInTest = () => unifiedConfig.server.nodeEnv === 'test';
 
 /**
  * General API Rate Limiting
@@ -8,6 +11,7 @@ import rateLimit from 'express-rate-limit';
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
+  skip: skipInTest,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -28,6 +32,7 @@ export const generalLimiter = rateLimit({
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
+  skip: skipInTest,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -48,6 +53,7 @@ export const authLimiter = rateLimit({
 export const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
+  skip: skipInTest,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -68,6 +74,7 @@ export const uploadLimiter = rateLimit({
 export const aiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   limit: 20,
+  skip: skipInTest,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
