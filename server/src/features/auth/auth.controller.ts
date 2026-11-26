@@ -9,6 +9,8 @@ import {
   REFRESH_TOKEN_MAX_AGE_MS,
   getAuthCookieOptions,
   getClearCookieOptions,
+  verifyAccessToken,
+  verifyRefreshToken,
 } from '../../core/utils/jwt.js';
 import type { AuthService } from './auth.service.js';
 
@@ -55,8 +57,36 @@ export class AuthController extends BaseController {
     }
   }
 
-  async signout(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async signout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      let userId = req.user?.id;
+      if (!userId) {
+        const accessToken = req.cookies?.[ACCESS_TOKEN_COOKIE] as string | undefined;
+        if (accessToken) {
+          try {
+            const payload = verifyAccessToken(accessToken);
+            userId = payload.sub;
+          } catch {
+            // Ignore access token verification failure on signout
+          }
+        }
+      }
+      if (!userId) {
+        const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE] as string | undefined;
+        if (refreshToken) {
+          try {
+            const payload = verifyRefreshToken(refreshToken);
+            userId = payload.sub;
+          } catch {
+            // Ignore refresh token verification failure on signout
+          }
+        }
+      }
+
+      if (userId) {
+        await this.authService.revokeSession(userId);
+      }
+
       const clearOpts = getClearCookieOptions();
       res.clearCookie(ACCESS_TOKEN_COOKIE, clearOpts);
       res.clearCookie(REFRESH_TOKEN_COOKIE, clearOpts);

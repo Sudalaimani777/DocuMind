@@ -1,10 +1,11 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { UserDTO } from '@documind/shared';
 import { db } from '../../core/db/index.js';
 import { users } from '../../core/db/schema.js';
 
 export interface UserRecord extends UserDTO {
   passwordHash: string;
+  tokenVersion: number;
   updatedAt: string;
 }
 
@@ -19,6 +20,7 @@ export interface IUserRepository {
   findByEmail(email: string): Promise<UserRecord | null>;
   findById(id: string): Promise<UserRecord | null>;
   create(data: CreateUserParams): Promise<UserRecord>;
+  incrementTokenVersion(id: string): Promise<number>;
 }
 
 function mapUserRow(row: typeof users.$inferSelect): UserRecord {
@@ -28,6 +30,7 @@ function mapUserRow(row: typeof users.$inferSelect): UserRecord {
     organization: row.organization,
     email: row.email,
     passwordHash: row.passwordHash,
+    tokenVersion: row.tokenVersion,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -70,5 +73,18 @@ export class DrizzleUserRepository implements IUserRepository {
       .returning();
 
     return mapUserRow(rows[0]);
+  }
+
+  async incrementTokenVersion(id: string): Promise<number> {
+    const rows = await db
+      .update(users)
+      .set({
+        tokenVersion: sql`${users.tokenVersion} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning({ tokenVersion: users.tokenVersion });
+
+    return rows[0]?.tokenVersion ?? 1;
   }
 }

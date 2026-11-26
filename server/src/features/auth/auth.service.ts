@@ -8,6 +8,9 @@ import {
 } from '../../core/utils/jwt.js';
 import type { IUserRepository, UserRecord } from './user.repository.js';
 
+// Constant 10-round bcrypt hash used to neutralize timing-based user enumeration attacks
+const DUMMY_BCRYPT_HASH = '$2b$10$3euPcmQFCiblsZeEu5s7p.eT7mQ4K1d1/2x1mB2J8XWJzM5F5yBGy';
+
 export interface AuthSessionResult {
   user: UserDTO;
   accessToken: string;
@@ -27,7 +30,7 @@ function toUserDTO(record: UserRecord): UserDTO {
 function issueSession(record: UserRecord): AuthSessionResult {
   const user = toUserDTO(record);
   const accessToken = signAccessToken(user);
-  const refreshToken = signRefreshToken(user.id);
+  const refreshToken = signRefreshToken(user.id, record.tokenVersion);
   return { user, accessToken, refreshToken };
 }
 
@@ -57,6 +60,7 @@ export class AuthService {
   async signin(input: SigninInput): Promise<AuthSessionResult> {
     const user = await this.userRepository.findByEmail(input.email);
     if (!user) {
+      await comparePassword(input.password, DUMMY_BCRYPT_HASH);
       throw new UnauthorizedError('Invalid email or password.');
     }
 
@@ -80,10 +84,14 @@ export class AuthService {
   async refreshSession(refreshToken: string): Promise<AuthSessionResult> {
     const payload = verifyRefreshToken(refreshToken);
     const user = await this.userRepository.findById(payload.sub);
-    if (!user) {
+    if (!user || user.tokenVersion !== payload.tokenVersion) {
       throw new UnauthorizedError('Invalid or expired refresh token.');
     }
 
     return issueSession(user);
+  }
+
+  async revokeSession(userId: string): Promise<void> {
+    await this.userRepository.incrementTokenVersion(userId);
   }
 }

@@ -44,11 +44,20 @@ class InMemoryUserRepository implements IUserRepository {
       organization: data.organization,
       email: data.email.trim().toLowerCase(),
       passwordHash: data.passwordHash,
+      tokenVersion: 1,
       createdAt: now,
       updatedAt: now,
     };
     this.usersById.set(record.id, record);
     return record;
+  }
+
+  async incrementTokenVersion(id: string): Promise<number> {
+    const user = this.usersById.get(id);
+    if (!user) return 1;
+    user.tokenVersion += 1;
+    user.updatedAt = new Date().toISOString();
+    return user.tokenVersion;
   }
 }
 
@@ -236,6 +245,30 @@ describe('Milestone 1.3: User Authentication & Private Workspace Isolation', () 
 
       const meAfterSignout = await agent.get('/api/v1/auth/me');
       expect(meAfterSignout.status).toBe(401);
+    });
+
+    it('revokes refresh token after signout and rejects subsequent refresh attempts', async () => {
+      const agent = request.agent(app);
+      const signupRes = await agent.post('/api/v1/auth/signup').send({
+        name: 'Eve',
+        organization: 'Epsilon Tech',
+        email: 'eve@example.com',
+        password: 'EvePassword123!',
+      });
+      expect(signupRes.status).toBe(201);
+      const cookies = signupRes.headers['set-cookie'] as unknown as string[];
+      const refreshCookie = cookies.find((c) => c.startsWith(`${REFRESH_TOKEN_COOKIE}=`));
+      expect(refreshCookie).toBeDefined();
+
+      // Sign out to revoke token version
+      await agent.post('/api/v1/auth/signout');
+
+      // Attempting to refresh using the old refresh token must be rejected
+      const replayRefresh = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', [refreshCookie!]);
+      expect(replayRefresh.status).toBe(401);
+      expect(replayRefresh.body.error.message).toBe('Invalid or expired refresh token.');
     });
   });
 });

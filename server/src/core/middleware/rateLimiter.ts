@@ -1,7 +1,20 @@
 import rateLimit from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
 import { unifiedConfig } from '../config/unifiedConfig.js';
+import { getRedisClient } from '../redis/index.js';
 
 const skipInTest = () => unifiedConfig.server.nodeEnv === 'test';
+
+function createRedisStore(prefix: string) {
+  if (unifiedConfig.server.nodeEnv === 'test') {
+    return undefined;
+  }
+  return new RedisStore({
+    sendCommand: (...args: string[]) =>
+      getRedisClient().call(args[0], ...args.slice(1)) as Promise<any>,
+    prefix,
+  });
+}
 
 /**
  * General API Rate Limiting
@@ -12,6 +25,8 @@ export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
   skip: skipInTest,
+  passOnStoreError: true,
+  store: createRedisStore('rl:gen:'),
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -33,6 +48,8 @@ export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
   skip: skipInTest,
+  passOnStoreError: true,
+  store: createRedisStore('rl:auth:'),
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -54,6 +71,8 @@ export const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
   skip: skipInTest,
+  passOnStoreError: true,
+  store: createRedisStore('rl:upload:'),
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -75,6 +94,8 @@ export const aiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   limit: 20,
   skip: skipInTest,
+  passOnStoreError: true,
+  store: createRedisStore('rl:ai:'),
   standardHeaders: true,
   legacyHeaders: false,
   message: {
