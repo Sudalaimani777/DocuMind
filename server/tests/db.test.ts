@@ -7,6 +7,8 @@ import {
   documents,
   documentChunks,
   processingJobs,
+  chatSessions,
+  chatMessages,
 } from '../src/core/db/schema.js';
 import { db, pool } from '../src/core/db/index.js';
 
@@ -183,6 +185,77 @@ describe('Milestone 1.2: Unified Config & Database Layer', () => {
           'idx_jobs_status',
         ])
       );
+    });
+
+    it('defines chat_sessions table with user_id cascade FK, nullable document_id set null FK, title, timestamps, and composite index', () => {
+      const cfg = getTableConfig(chatSessions);
+      expect(cfg.name).toBe('chat_sessions');
+
+      const colNames = cfg.columns.map((c) => c.name);
+      expect(colNames).toEqual(
+        expect.arrayContaining([
+          'id',
+          'user_id',
+          'document_id',
+          'title',
+          'created_at',
+          'updated_at',
+        ])
+      );
+
+      expect(chatSessions.userId.name).toBe('user_id');
+      expect(chatSessions.documentId.name).toBe('document_id');
+      expect(chatSessions.documentId.notNull).toBe(false);
+      expect(chatSessions.title.name).toBe('title');
+      expect(chatSessions.createdAt.name).toBe('created_at');
+      expect(chatSessions.updatedAt.name).toBe('updated_at');
+
+      expect(cfg.foreignKeys).toHaveLength(2);
+      const fkActions = cfg.foreignKeys.map((fk) => fk.onDelete);
+      expect(fkActions).toEqual(expect.arrayContaining(['cascade', 'set null']));
+
+      const indexNames = cfg.indexes.map((i) => i.config.name);
+      expect(indexNames).toContain('idx_chat_sessions_user_id');
+
+      const sessionUserIdx = cfg.indexes.find(
+        (i) => i.config.name === 'idx_chat_sessions_user_id'
+      );
+      const indexedCols = sessionUserIdx?.config.columns ?? [];
+      expect(indexedCols).toHaveLength(2);
+      expect(indexedCols[0]).toMatchObject({ name: 'user_id' });
+      expect(indexedCols[1]).toMatchObject({
+        name: 'updated_at',
+        indexConfig: { order: 'desc' },
+      });
+    });
+
+    it('defines chat_messages table with session_id cascade FK, role, content, citations jsonb, created_at, and composite index', () => {
+      const cfg = getTableConfig(chatMessages);
+      expect(cfg.name).toBe('chat_messages');
+
+      const colNames = cfg.columns.map((c) => c.name);
+      expect(colNames).toEqual(
+        expect.arrayContaining([
+          'id',
+          'session_id',
+          'role',
+          'content',
+          'citations',
+          'created_at',
+        ])
+      );
+
+      expect(chatMessages.sessionId.name).toBe('session_id');
+      expect(chatMessages.role.name).toBe('role');
+      expect(chatMessages.content.name).toBe('content');
+      expect(chatMessages.citations.name).toBe('citations');
+      expect(chatMessages.createdAt.name).toBe('created_at');
+
+      expect(cfg.foreignKeys).toHaveLength(1);
+      expect(cfg.foreignKeys[0].onDelete).toBe('cascade');
+
+      const indexNames = cfg.indexes.map((i) => i.config.name);
+      expect(indexNames).toContain('idx_chat_messages_session_id');
     });
   });
 

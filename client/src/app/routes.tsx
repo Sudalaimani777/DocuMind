@@ -9,6 +9,8 @@ import { SignUpView } from '../features/auth/views/SignUpView';
 
 const LibraryView = lazy(() => import('../features/documents/views/LibraryView'));
 const SearchView = lazy(() => import('../features/search/views/SearchView'));
+const ChatView = lazy(() => import('../features/chat/views/ChatView'));
+const HistoryView = lazy(() => import('../features/chat-history/views/HistoryView'));
 
 function RouteLoader() {
   return (
@@ -69,31 +71,25 @@ export const router = createBrowserRouter([
       {
         path: 'chat',
         element: (
-          <PhaseRoutePlaceholder
-            title="AI Document Assistant"
-            phaseLabel="Phase 3"
-            description="Grounded RAG chat with inline coordinate citations arrives in Phase 3."
-          />
+          <Suspense fallback={<RouteLoader />}>
+            <ChatView />
+          </Suspense>
         ),
       },
       {
         path: 'chat/:documentId',
         element: (
-          <PhaseRoutePlaceholder
-            title="Scoped AI Document Assistant"
-            phaseLabel="Phase 3"
-            description="Single-document grounded RAG chat arrives in Phase 3."
-          />
+          <Suspense fallback={<RouteLoader />}>
+            <ChatView />
+          </Suspense>
         ),
       },
       {
         path: 'history',
         element: (
-          <PhaseRoutePlaceholder
-            title="Chat History"
-            phaseLabel="Phase 3"
-            description="Persistent RAG conversation sessions arrive in Phase 3."
-          />
+          <Suspense fallback={<RouteLoader />}>
+            <HistoryView />
+          </Suspense>
         ),
       },
       {

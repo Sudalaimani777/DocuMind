@@ -75,9 +75,23 @@ export const searchQuerySchema = z
     { message: 'endDate must be on or after startDate', path: ['endDate'] }
   );
 
+export const ragChatRequestSchema = z.object({
+  query: z
+    .string()
+    .trim()
+    .min(1, 'Query is required')
+    .max(2000, 'Query must not exceed 2000 characters'),
+  sessionId: z.string().uuid('Invalid sessionId UUID').optional(),
+  documentId: z.string().uuid('Invalid documentId UUID').optional(),
+});
+
+export const chatSessionsQuerySchema = paginationSchema;
+
 export type SignupInput = z.infer<typeof signupSchema>;
 export type SigninInput = z.infer<typeof signinSchema>;
 export type DocumentUploadQuery = z.infer<typeof documentUploadQuerySchema>;
 export type PaginationQuery = z.infer<typeof paginationSchema>;
 export type UuidParam = z.infer<typeof uuidParamSchema>;
 export type SearchQueryInput = z.infer<typeof searchQuerySchema>;
+export type RagChatRequestInput = z.infer<typeof ragChatRequestSchema>;
+export type ChatSessionsQueryInput = z.infer<typeof chatSessionsQuerySchema>;
