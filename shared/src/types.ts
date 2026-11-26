@@ -106,3 +106,37 @@ export interface SearchResponseDTO {
   tookMs: number;
   results: SearchResultItemDTO[];
 }
+
+export type ChatRole = 'user' | 'assistant';
+
+export interface CitationDTO {
+  index: number;
+  badge: string;
+  chunkId: string;
+  documentId: string;
+  documentTitle: string;
+  fileType: string;
+  similarity: number;
+  coordinates: CoordinatesDTO;
+  excerpt: string;
+}
+
+export interface ChatSessionDTO {
+  id: string;
+  userId: string;
+  documentId: string | null;
+  documentTitle: string | null;
+  title: string;
+  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessageDTO {
+  id: string;
+  sessionId: string;
+  role: ChatRole;
+  content: string;
+  citations: CitationDTO[];
+  createdAt: string;
+}

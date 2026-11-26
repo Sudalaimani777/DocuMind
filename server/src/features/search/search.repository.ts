@@ -29,7 +29,8 @@ export interface ISearchRepository {
     userId: string,
     queryVector: number[],
     filters: SearchFilters,
-    limit: number
+    limit: number,
+    minSimilarity?: number
   ): Promise<RawSearchRow[]>;
 }
 
@@ -86,14 +87,18 @@ export class DrizzleSearchRepository implements ISearchRepository {
     userId: string,
     queryVector: number[],
     filters: SearchFilters,
-    limit: number
+    limit: number,
+    minSimilarity: number = MIN_SEMANTIC_SIMILARITY
   ): Promise<RawSearchRow[]> {
     const vectorLiteral = `[${queryVector.join(',')}]`;
     const distanceExpr = sql`${documentChunks.embedding} <=> ${vectorLiteral}::vector`;
     const similarityExpr = sql<number>`1 - (${distanceExpr})`;
 
     const baseConditions = combineSearchConditions(userId, filters);
-    const similarityThreshold = sql`(1 - (${distanceExpr})) > ${MIN_SEMANTIC_SIMILARITY}`;
+    const whereClause =
+      minSimilarity > 0
+        ? and(baseConditions, sql`(1 - (${distanceExpr})) > ${minSimilarity}`)
+        : baseConditions;
 
     const rows = await db
       .select({
@@ -110,7 +115,7 @@ export class DrizzleSearchRepository implements ISearchRepository {
       })
       .from(documentChunks)
       .innerJoin(documents, eq(documentChunks.documentId, documents.id))
-      .where(and(baseConditions, similarityThreshold))
+      .where(whereClause)
       .orderBy(distanceExpr)
       .limit(limit);
 

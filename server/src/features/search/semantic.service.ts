@@ -17,10 +17,20 @@ export class SemanticSearchService {
     userId: string,
     queryText: string,
     filters: SearchFilters,
-    limit: number
+    limit: number,
+    minSimilarity?: number
   ): Promise<SearchResultItemDTO[]> {
     const queryVector = await this.aiProvider.generateEmbedding(queryText);
-    const rows = await this.searchRepo.searchSemantic(userId, queryVector, filters, limit);
+    const rows =
+      minSimilarity !== undefined
+        ? await this.searchRepo.searchSemantic(
+            userId,
+            queryVector,
+            filters,
+            limit,
+            minSimilarity
+          )
+        : await this.searchRepo.searchSemantic(userId, queryVector, filters, limit);
 
     return rows.map((row) => ({
       chunkId: row.chunkId,

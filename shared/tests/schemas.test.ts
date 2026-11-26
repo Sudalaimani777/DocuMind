@@ -6,6 +6,8 @@ import {
   paginationSchema,
   uuidParamSchema,
   searchQuerySchema,
+  ragChatRequestSchema,
+  chatSessionsQuerySchema,
 } from '../src/schemas.js';
 import type {
   UserDTO,
@@ -259,6 +261,38 @@ describe('Shared Zod Schemas', () => {
           endDate: '2026-11-01',
         }).success
       ).toBe(false);
+    });
+  });
+
+  describe('ragChatRequestSchema', () => {
+    it('trims valid query and accepts optional sessionId and documentId UUIDs', () => {
+      const parsed = ragChatRequestSchema.parse({
+        query: '  What was Q3 operating income?  ',
+        sessionId: '550e8400-e29b-41d4-a716-446655440000',
+        documentId: '660e8400-e29b-41d4-a716-446655440001',
+      });
+
+      expect(parsed.query).toBe('What was Q3 operating income?');
+      expect(parsed.sessionId).toBe('550e8400-e29b-41d4-a716-446655440000');
+      expect(parsed.documentId).toBe('660e8400-e29b-41d4-a716-446655440001');
+    });
+
+    it('rejects empty/whitespace query, query > 2000 chars, and invalid UUIDs', () => {
+      expect(() => ragChatRequestSchema.parse({ query: '' })).toThrow();
+      expect(() => ragChatRequestSchema.parse({ query: '   ' })).toThrow();
+      expect(() => ragChatRequestSchema.parse({ query: 'x'.repeat(2001) })).toThrow();
+      expect(() =>
+        ragChatRequestSchema.parse({ query: 'hi', sessionId: 'not-a-uuid' })
+      ).toThrow();
+      expect(() =>
+        ragChatRequestSchema.parse({ query: 'hi', documentId: 'not-a-uuid' })
+      ).toThrow();
+    });
+  });
+
+  describe('chatSessionsQuerySchema', () => {
+    it('defaults page=1 and limit=20', () => {
+      expect(chatSessionsQuerySchema.parse({})).toEqual({ page: 1, limit: 20 });
     });
   });
 });

@@ -24,13 +24,14 @@ export class HybridSearchService {
     userId: string,
     queryText: string,
     filters: SearchFilters,
-    limit: number
+    limit: number,
+    minSimilarity?: number
   ): Promise<HybridSearchResult> {
     const candidateLimit = Math.min(limit * 2, 50);
 
     const [lexicalOutcome, semanticOutcome] = await Promise.allSettled([
       this.lexicalService.search(userId, queryText, filters, candidateLimit),
-      this.semanticService.search(userId, queryText, filters, candidateLimit),
+      this.semanticService.search(userId, queryText, filters, candidateLimit, minSimilarity),
     ]);
 
     if (lexicalOutcome.status === 'rejected') {

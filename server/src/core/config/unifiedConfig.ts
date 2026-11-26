@@ -23,7 +23,9 @@ const rawEnvSchema = z
     CLOUDINARY_API_KEY: z.string().default(''),
     CLOUDINARY_API_SECRET: z.string().default(''),
     OLLAMA_BASE_URL: z.string().url().default('http://localhost:11434'),
+    OLLAMA_LLM_MODEL: z.string().trim().min(1).default('llama3.1:8b'),
     GEMINI_API_KEY: z.string().optional(),
+    GEMINI_LLM_MODEL: z.string().trim().min(1).default('gemini-2.5-flash'),
     DEFAULT_AI_PROVIDER: z.enum(['ollama', 'gemini']).default('gemini'),
   })
   .superRefine((env, ctx) => {
@@ -68,7 +70,9 @@ export interface UnifiedConfig {
   ai: {
     defaultProvider: 'ollama' | 'gemini';
     ollamaBaseUrl: string;
+    ollamaLlmModel: string;
     geminiApiKey?: string;
+    geminiLlmModel: string;
   };
 }
 
@@ -101,7 +105,9 @@ export function parseConfig(rawEnv: Record<string, string | undefined>): Unified
     ai: {
       defaultProvider: parsed.DEFAULT_AI_PROVIDER,
       ollamaBaseUrl: parsed.OLLAMA_BASE_URL,
+      ollamaLlmModel: parsed.OLLAMA_LLM_MODEL,
       geminiApiKey: parsed.GEMINI_API_KEY,
+      geminiLlmModel: parsed.GEMINI_LLM_MODEL,
     },
   };
 }

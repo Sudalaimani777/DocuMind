@@ -35,6 +35,13 @@ import { HybridSearchService } from './features/search/hybrid.service.js';
 import { SearchService } from './features/search/search.service.js';
 import { SearchController } from './features/search/search.controller.js';
 import { createSearchRouter } from './features/search/search.routes.js';
+import { DrizzleChatHistoryRepository } from './features/chat-history/history.repository.js';
+import { ChatHistoryService } from './features/chat-history/history.service.js';
+import { HistoryController } from './features/chat-history/history.controller.js';
+import { createHistoryRouter } from './features/chat-history/history.routes.js';
+import { ContextOrchestrator } from './features/rag/context.orchestrator.js';
+import { RagController } from './features/rag/rag.controller.js';
+import { createRagRouter } from './features/rag/rag.routes.js';
 
 export interface AppDependencies {
   authService?: AuthService;
@@ -42,6 +49,8 @@ export interface AppDependencies {
   documentService?: DocumentService;
   searchService?: SearchService;
   sseService?: SseService;
+  ragController?: RagController;
+  historyService?: ChatHistoryService;
 }
 
 function createDefaultSearchService(): SearchService {
@@ -110,10 +119,11 @@ export function createApp(deps: AppDependencies = {}): Express {
   app.use('/api/v1/processing', createProcessingRouter(jobController));
   app.use('/api/v1/jobs', createJobsRouter(jobController));
 
+  const documentRepository = new DrizzleDocumentRepository();
   const documentService =
     deps.documentService ??
     new DocumentService(
-      new DrizzleDocumentRepository(),
+      documentRepository,
       new DeduplicationService(new DrizzleDocumentDeduplicationRepository()),
       cloudinaryService,
       documentProcessingQueue,
@@ -125,6 +135,16 @@ export function createApp(deps: AppDependencies = {}): Express {
   const searchService = deps.searchService ?? createDefaultSearchService();
   const searchController = new SearchController(searchService);
   app.use('/api/v1/search', createSearchRouter(searchController));
+
+  const historyService =
+    deps.historyService ?? new ChatHistoryService(new DrizzleChatHistoryRepository());
+  const ragController =
+    deps.ragController ??
+    new RagController(new ContextOrchestrator(searchService, historyService, documentRepository));
+  const historyController = new HistoryController(historyService);
+
+  app.use('/api/v1/chat', createRagRouter(ragController));
+  app.use('/api/v1/chat', createHistoryRouter(historyController));
 
   app.use(errorHandler);
 

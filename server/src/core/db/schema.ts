@@ -11,7 +11,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
-import type { CoordinatesDTO } from '@documind/shared';
+import type { CoordinatesDTO, CitationDTO, ChatRole } from '@documind/shared';
 import { vector768 } from './types.js';
 
 export const users = pgTable('users', {
@@ -101,9 +101,40 @@ export const processingJobs = pgTable(
   ]
 );
 
+export const chatSessions = pgTable(
+  'chat_sessions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    documentId: uuid('document_id').references(() => documents.id, { onDelete: 'set null' }),
+    title: varchar('title', { length: 255 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('idx_chat_sessions_user_id').on(table.userId, table.updatedAt.desc())]
+);
+
+export const chatMessages = pgTable(
+  'chat_messages',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sessionId: uuid('session_id')
+      .notNull()
+      .references(() => chatSessions.id, { onDelete: 'cascade' }),
+    role: varchar('role', { length: 20 }).$type<ChatRole>().notNull(),
+    content: text('content').notNull(),
+    citations: jsonb('citations').$type<CitationDTO[]>().default([]).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index('idx_chat_messages_session_id').on(table.sessionId, table.createdAt)]
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   documents: many(documents),
   processingJobs: many(processingJobs),
+  chatSessions: many(chatSessions),
 }));
 
 export const documentsRelations = relations(documents, ({ one, many }) => ({
@@ -113,6 +144,7 @@ export const documentsRelations = relations(documents, ({ one, many }) => ({
   }),
   chunks: many(documentChunks),
   jobs: many(processingJobs),
+  chatSessions: many(chatSessions),
 }));
 
 export const documentChunksRelations = relations(documentChunks, ({ one }) => ({
@@ -130,5 +162,24 @@ export const processingJobsRelations = relations(processingJobs, ({ one }) => ({
   user: one(users, {
     fields: [processingJobs.userId],
     references: [users.id],
+  }),
+}));
+
+export const chatSessionsRelations = relations(chatSessions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [chatSessions.userId],
+    references: [users.id],
+  }),
+  document: one(documents, {
+    fields: [chatSessions.documentId],
+    references: [documents.id],
+  }),
+  messages: many(chatMessages),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  session: one(chatSessions, {
+    fields: [chatMessages.sessionId],
+    references: [chatSessions.id],
   }),
 }));

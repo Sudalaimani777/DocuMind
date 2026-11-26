@@ -22,6 +22,10 @@ function deduplicateByDocument(
   });
 }
 
+export interface SearchExecutionOptions {
+  minSimilarity?: number;
+}
+
 /**
  * Top-level search orchestrator routing keyword, semantic, and hybrid modes.
  */
@@ -32,7 +36,11 @@ export class SearchService {
     private readonly hybridService: HybridSearchService
   ) {}
 
-  async search(userId: string, input: SearchQueryInput): Promise<SearchResponseDTO> {
+  async search(
+    userId: string,
+    input: SearchQueryInput,
+    options?: SearchExecutionOptions
+  ): Promise<SearchResponseDTO> {
     const start = performance.now();
     const filters: SearchFilters = {
       format: input.format,
@@ -57,7 +65,13 @@ export class SearchService {
 
     if (input.mode === 'semantic') {
       try {
-        const raw = await this.semanticService.search(userId, input.q, filters, input.limit);
+        const raw = await this.semanticService.search(
+          userId,
+          input.q,
+          filters,
+          input.limit,
+          options?.minSimilarity
+        );
         const results = deduplicateByDocument(raw, input.documentId);
         return {
           query: input.q,
@@ -78,7 +92,13 @@ export class SearchService {
       }
     }
 
-    const hybrid = await this.hybridService.search(userId, input.q, filters, input.limit);
+    const hybrid = await this.hybridService.search(
+      userId,
+      input.q,
+      filters,
+      input.limit,
+      options?.minSimilarity
+    );
     const results = deduplicateByDocument(hybrid.results, input.documentId);
     return {
       query: input.q,
