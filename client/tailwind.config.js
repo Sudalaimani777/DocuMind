@@ -6,8 +6,8 @@ export default {
     extend: {
       colors: {
         primary: '#FF385C',
-        'on-primary': '#222222',
-        secondary: '#C80739',
+        'on-primary': '#FFFFFF',
+        secondary: '#E00B41',
         'on-secondary': '#FFFFFF',
         surface: '#FFFFFF',
         'on-surface': '#222222',

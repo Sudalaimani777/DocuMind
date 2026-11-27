@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../core/lib/utils';
 import { useAuthStore } from '../../core/store/authStore';
+import { useProcessingEvents } from '../../features/documents/hooks/useDocuments';
 import { useSearchStore } from '../../features/search/store/searchStore';
 import { CommandPalette } from './CommandPalette';
 
@@ -26,19 +27,19 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/library', label: 'Document Library', icon: FolderOpen },
-  { to: '/search', label: 'Search Repository', icon: Search },
+  { to: '/library', label: 'Documents', icon: FolderOpen },
+  { to: '/search', label: 'Search', icon: Search },
   { to: '/chat', label: 'AI Chat', icon: MessageSquareText },
   { to: '/history', label: 'Chat History', icon: History },
 ];
 
 const ROUTE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
-  '/library': 'Document Library',
-  '/search': 'Search Repository',
+  '/library': 'Documents',
+  '/search': 'Search',
   '/chat': 'AI Chat',
   '/history': 'Chat History',
-  '/settings': 'Workspace Settings',
+  '/settings': 'Settings',
 };
 
 function getInitials(name?: string): string {
@@ -58,6 +59,8 @@ export function AppShell() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const setCommandPaletteOpen = useSearchStore((s) => s.setCommandPaletteOpen);
+
+  useProcessingEvents();
 
   const currentTitle =
     ROUTE_TITLES[location.pathname] ??
@@ -80,7 +83,7 @@ export function AppShell() {
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-15 px-15 py-2.5 rounded-md font-t04 text-t04-medium transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
+                  'flex items-center gap-2.5 px-3 py-2 rounded-md font-t04 text-t04-medium transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
                   isActive
                     ? 'bg-surface-accent-subtle text-secondary'
                     : 'text-on-surface hover:bg-surface-subtle'
@@ -99,30 +102,27 @@ export function AppShell() {
   return (
     <div className="min-h-screen flex bg-surface">
       {/* Desktop Left Navigation Rail */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:shrink-0 min-h-screen border-r border-outline bg-surface justify-between p-20">
-        <div className="flex flex-col gap-32">
+      <aside className="hidden lg:flex lg:flex-col lg:w-56 lg:shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto border-r border-outline bg-surface justify-between p-3">
+        <div className="flex flex-col gap-5">
           <Link
             to="/library"
-            className="flex items-center gap-15 px-15 py-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus"
+            className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus"
           >
-            <span className="w-8 h-8 rounded-md bg-secondary text-on-secondary flex items-center justify-center shrink-0">
+            <span className="w-7 h-7 rounded-md bg-secondary text-on-secondary flex items-center justify-center shrink-0">
               <Layers className="w-4 h-4" aria-hidden="true" />
             </span>
-            <span className="flex flex-col">
-              <span className="font-t03 text-t03 text-on-surface leading-none">DocuMind</span>
-              <span className="font-t05 text-t05 text-on-surface-variant">Enterprise RAG</span>
-            </span>
+            <span className="font-t03 text-t03 text-on-surface tracking-tight">DocuMind</span>
           </Link>
 
           <nav aria-label="Main menu">{renderNavLinks()}</nav>
         </div>
 
-        <div className="flex flex-col gap-2 pt-20 border-t border-outline">
+        <div className="flex flex-col gap-1 pt-3 border-t border-outline">
           <NavLink
             to="/settings"
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-15 px-15 py-2.5 rounded-md font-t04 text-t04-medium transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
+                'flex items-center gap-2.5 px-3 py-2 rounded-md font-t04 text-t04-medium transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
                 isActive
                   ? 'bg-surface-accent-subtle text-secondary'
                   : 'text-on-surface hover:bg-surface-subtle'
@@ -135,7 +135,7 @@ export function AppShell() {
           <button
             type="button"
             onClick={() => void handleSignOut()}
-            className="flex items-center gap-15 px-15 py-2.5 rounded-md text-on-surface-variant hover:text-status-failed-text hover:bg-status-failed-bg font-t04 text-t04-medium transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus text-left"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-on-surface-variant hover:text-status-failed-text hover:bg-status-failed-bg font-t04 text-t04-medium transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus text-left"
           >
             <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Sign out</span>
@@ -182,19 +182,19 @@ export function AppShell() {
 
       {/* Main Workspace Column */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-20 bg-surface border-b border-outline px-20 lg:px-32 py-15 flex items-center justify-between gap-20">
-          <div className="flex items-center gap-15">
+        <header className="sticky top-0 z-20 h-12 bg-surface border-b border-outline px-4 lg:px-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open navigation menu"
-              className="lg:hidden w-9 h-9 rounded-md border border-outline hover:bg-surface-subtle flex items-center justify-center text-on-surface"
+              className="lg:hidden w-8 h-8 rounded-md border border-outline hover:bg-surface-subtle flex items-center justify-center text-on-surface"
             >
               <Menu className="w-4 h-4" aria-hidden="true" />
             </button>
             <nav
               aria-label="Breadcrumb"
-              className="flex items-center gap-2 font-t05 text-t05 text-on-surface-variant"
+              className="flex items-center gap-1.5 font-t05 text-t05 text-on-surface-variant"
             >
               <Link
                 to="/"
@@ -203,40 +203,37 @@ export function AppShell() {
                 DocuMind
               </Link>
               <span aria-hidden="true">/</span>
-              <span className="text-on-surface" aria-current="page">
+              <span className="text-on-surface font-medium" aria-current="page">
                 {currentTitle}
               </span>
             </nav>
           </div>
 
-          <div className="flex items-center gap-15">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setCommandPaletteOpen(true)}
               aria-label="Open quick search palette"
-              className="hidden sm:flex items-center justify-between gap-2 w-72 md:w-80 lg:w-96 px-3 py-1.5 rounded-md bg-surface-subtle border border-outline text-on-surface-variant hover:bg-surface hover:border-outline-focus font-t04 text-t04 transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus"
+              className="hidden sm:flex items-center justify-between gap-2 w-64 md:w-72 px-2.5 py-1 rounded-md bg-surface-subtle/60 border border-outline text-on-surface-variant hover:bg-surface hover:border-outline-focus font-t04 text-t04 transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus"
             >
               <span className="flex items-center gap-2 truncate">
-                <Search className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">Search documents or clauses...</span>
+                <Search className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span className="truncate text-[13px]">Search documents...</span>
               </span>
-              <kbd className="px-1.5 py-0.5 rounded-xs border border-outline bg-surface text-on-surface-variant font-mono text-mono-sm shrink-0">
-                ⌘K
-              </kbd>
             </button>
 
             <Link
               to="/settings"
               aria-label="Workspace settings"
               title={user ? `${user.name} (${user.organization})` : 'Profile settings'}
-              className="w-8 h-8 rounded-pill bg-secondary text-on-secondary flex items-center justify-center font-t05 text-t05 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus shrink-0"
+              className="w-7 h-7 rounded-pill bg-secondary text-on-secondary flex items-center justify-center font-t05 text-t05 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus shrink-0"
             >
               {getInitials(user?.name)}
             </Link>
           </div>
         </header>
 
-        <main className="flex-1 px-20 lg:px-32 py-32 flex flex-col gap-32 max-w-7xl w-full mx-auto">
+        <main className="flex-1 px-4 lg:px-6 py-5 flex flex-col gap-5 max-w-6xl w-full mx-auto">
           <Outlet />
         </main>
       </div>

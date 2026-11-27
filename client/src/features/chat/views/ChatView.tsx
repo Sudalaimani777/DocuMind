@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import type { CitationDTO } from '@documind/shared';
+import { PageMessageRail } from '../../../components/ui/message-scroller';
 import { useAuthStore } from '../../../core/store/authStore';
 import { useDocumentsQuery } from '../../documents/hooks/useDocuments';
 import { streamRagChat } from '../api/chat.api';
@@ -11,7 +12,7 @@ import { useChatStore } from '../store/chatStore';
 import { ChatHeader } from '../components/ChatHeader';
 import { ChatTurnItem } from '../components/ChatTurnItem';
 import { ChatComposer } from '../components/ChatComposer';
-import { SourceVerificationPanel } from '../components/SourceVerificationPanel';
+import { CitationDrawer } from '../components/CitationDrawer';
 
 interface ConversationTurn {
   id: string;
@@ -107,8 +108,11 @@ export function ChatView() {
   }, [sessionIdParam, chatMessagesQuery.data, setMessages]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
-  }, [messages.length, streamingContent]);
+    messagesEndRef.current?.scrollIntoView?.({
+      behavior: isStreaming ? 'auto' : 'smooth',
+      block: 'end',
+    });
+  }, [messages.length, streamingContent, isStreaming]);
 
   useEffect(() => {
     return () => {
@@ -149,23 +153,6 @@ export function ChatView() {
 
     return result;
   }, [messages, isStreaming, streamingContent, streamingCitations]);
-
-  const allCitations = useMemo<CitationDTO[]>(() => {
-    const combined = [
-      ...messages.flatMap((m) => m.citations),
-      ...(isStreaming ? streamingCitations : []),
-    ];
-    const seen = new Set<string>();
-    const deduped: CitationDTO[] = [];
-    for (const c of combined) {
-      const key = `${c.chunkId}:${c.index}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        deduped.push(c);
-      }
-    }
-    return deduped;
-  }, [messages, isStreaming, streamingCitations]);
 
   const handleSelectGlobal = () => {
     setScopeMode('global');
@@ -300,7 +287,7 @@ export function ChatView() {
   };
 
   return (
-    <div className="flex flex-col gap-20 max-w-6xl w-full mx-auto">
+    <div className="flex flex-col gap-5 w-full flex-1">
       <ChatHeader
         scopeMode={scopeMode}
         scopedDocumentId={scopedDocumentId}
@@ -312,71 +299,73 @@ export function ChatView() {
         onNewChat={handleNewChat}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-32 items-start">
-        <div className="lg:col-span-7 flex flex-col gap-32">
-          <section
-            id="chat-stream"
-            aria-label="Conversation Stream"
-            className="flex flex-col gap-32"
-            aria-live="polite"
-          >
-            {chatMessagesQuery.isLoading && sessionIdParam ? (
-              <div className="py-32 flex items-center justify-center gap-2 font-t04 text-t04 text-on-surface-variant">
-                <Loader2 className="w-5 h-5 animate-spin text-secondary" aria-hidden="true" />
-                <span>Loading conversation history...</span>
-              </div>
-            ) : turns.length === 0 ? (
-              <div className="bg-surface-subtle/50 border border-outline rounded-card p-20 flex flex-col gap-1 max-w-prose">
-                <h2 className="font-t03 text-t03 text-on-surface">
-                  Grounded Q&amp;A with Verifiable Citations
-                </h2>
-                <p className="font-t04 text-t04 text-on-surface-variant">
-                  Ask a question below or pick a starter prompt. Every assertion links directly to
-                  its source coordinates in the inspector.
-                </p>
-              </div>
-            ) : (
-              turns.map((turn, idx) => (
-                <ChatTurnItem
-                  key={turn.id}
-                  userName={userName}
-                  userPrompt={turn.userPrompt}
-                  assistantContent={turn.assistantContent}
-                  citations={turn.citations}
-                  timestampLabel={turn.timestampLabel}
-                  isStreaming={turn.isStreaming}
-                  isFirst={idx === 0}
-                  onSelectCitation={setActiveCitation}
-                />
-              ))
-            )}
+      <div className="flex flex-col justify-between gap-4 w-full max-w-3xl mx-auto flex-1">
+        <section
+          id="chat-stream"
+          aria-label="Conversation Stream"
+          aria-live="polite"
+          aria-busy={isStreaming}
+          role="log"
+          className="flex flex-col gap-4 pb-6"
+        >
+          {chatMessagesQuery.isLoading && sessionIdParam ? (
+            <div className="py-8 flex items-center justify-center gap-2 font-t04 text-t04 text-on-surface-variant">
+              <Loader2 className="w-4 h-4 animate-spin text-secondary" aria-hidden="true" />
+              <span>Loading conversation...</span>
+            </div>
+          ) : turns.length === 0 ? (
+            <div className="bg-surface-subtle/50 border border-outline rounded-md p-4 flex flex-col gap-1">
+              <h2 className="font-t04 text-t04 font-semibold text-on-surface">
+                Ask anything about your documents
+              </h2>
+              <p className="font-t04 text-t04 text-on-surface-variant">
+                Type a question below. Every answer includes verifiable page references.
+              </p>
+            </div>
+          ) : (
+            turns.map((turn, idx) => (
+              <ChatTurnItem
+                key={turn.id}
+                userName={userName}
+                userPrompt={turn.userPrompt}
+                assistantContent={turn.assistantContent}
+                citations={turn.citations}
+                timestampLabel={turn.timestampLabel}
+                isStreaming={turn.isStreaming}
+                isFirst={idx === 0}
+                onSelectCitation={setActiveCitation}
+              />
+            ))
+          )}
 
-            {streamError ? (
-              <div
-                role="alert"
-                className="flex items-center gap-2 p-15 rounded-md border border-status-failed-border bg-status-failed-bg text-status-failed-text font-t04 text-t04"
-              >
-                <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span>{streamError}</span>
-              </div>
-            ) : null}
+          {streamError ? (
+            <div
+              role="alert"
+              className="flex items-center gap-2 p-15 rounded-md border border-status-failed-border bg-status-failed-bg text-status-failed-text font-t04 text-t04"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>{streamError}</span>
+            </div>
+          ) : null}
 
-            <div ref={messagesEndRef} />
-          </section>
+          <div ref={messagesEndRef} className="scroll-mb-36" />
+        </section>
 
+        <div className="sticky bottom-0 z-10 bg-surface pt-2 pb-3">
           <ChatComposer
             isStreaming={isStreaming}
             onSubmit={(q) => void handleSubmit(q)}
             onStop={handleStop}
           />
         </div>
-
-        <SourceVerificationPanel
-          citations={allCitations}
-          activeCitation={activeCitation}
-          onSelectCitation={setActiveCitation}
-        />
       </div>
+
+      <PageMessageRail containerSelector="#chat-stream" />
+
+      <CitationDrawer
+        citation={activeCitation}
+        onClose={() => setActiveCitation(null)}
+      />
     </div>
   );
 }

@@ -39,10 +39,10 @@ export function SearchFiltersSidebar({
   return (
     <aside
       aria-label="Search Filters"
-      className="bg-surface border border-outline rounded-card p-20 flex flex-col gap-20"
+      className="bg-surface border border-outline rounded-md p-4 flex flex-col gap-4"
     >
-      <div className="flex items-center justify-between border-b border-outline pb-15">
-        <h2 className="font-t03 text-t03 text-on-surface">Filters</h2>
+      <div className="flex items-center justify-between border-b border-outline pb-2.5">
+        <h2 className="font-t04 text-t04 font-semibold text-on-surface">Filters</h2>
         <button
           type="button"
           onClick={onResetAll}

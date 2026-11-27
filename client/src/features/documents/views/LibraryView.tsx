@@ -6,7 +6,6 @@ import { DocumentTable } from '../components/DocumentTable';
 import { UploadDropzone } from '../components/UploadDropzone';
 import {
   useDocumentsQuery,
-  useProcessingEvents,
   useUploadDocumentsMutation,
 } from '../hooks/useDocuments';
 import { useDocumentUploadStore } from '../stores/useDocumentUploadStore';
@@ -23,8 +22,6 @@ export function LibraryView() {
   const [fileTypeFilter, setFileTypeFilter] = useState<DocumentFormat | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<DocumentStatus | 'all'>('all');
 
-  useProcessingEvents();
-
   const openInspector = useDocumentUploadStore((s) => s.openInspector);
   const openDeleteDialog = useDocumentUploadStore((s) => s.openDeleteDialog);
 
@@ -37,11 +34,15 @@ export function LibraryView() {
 
   const uploadMutation = useUploadDocumentsMutation();
 
-  const handleFilesSelected = (files: File[]) => {
-    if (files.length === 0) return;
-    void uploadMutation.mutateAsync(files).catch(() => {
+  const handleFilesSelected = async (files: File[]): Promise<boolean> => {
+    if (files.length === 0) return true;
+    try {
+      await uploadMutation.mutateAsync(files);
+      return true;
+    } catch {
       // Handled inside useUploadDocumentsMutation onError
-    });
+      return false;
+    }
   };
 
   const handleClearFilters = () => {
@@ -53,13 +54,13 @@ export function LibraryView() {
 
   return (
     <>
-      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-20">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-t00 text-t00 text-on-surface tracking-tight text-balance">
-            Document Repository &amp; Ingestion Hub
+      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-15">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="font-t01 text-t01 text-on-surface tracking-tight text-balance">
+            Documents
           </h1>
           <p className="font-t04 text-t04 text-on-surface-variant text-pretty">
-            Upload multi-format corporate files, monitor BullMQ extraction stages, and inspect verified coordinate chunks.
+            Upload PDF, Word, Excel, or PowerPoint files to search and ask questions.
           </p>
         </div>
 
@@ -90,6 +91,8 @@ export function LibraryView() {
         page={documentsQuery.data?.pagination.currentPage ?? page}
         totalPages={documentsQuery.data?.pagination.totalPages ?? 1}
         isLoading={documentsQuery.isLoading}
+        isError={documentsQuery.isError}
+        onRetry={() => void documentsQuery.refetch()}
         searchQuery={searchQuery}
         fileTypeFilter={fileTypeFilter}
         statusFilter={statusFilter}

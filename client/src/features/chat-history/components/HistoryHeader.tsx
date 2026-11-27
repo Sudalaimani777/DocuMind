@@ -6,22 +6,22 @@ import { Plus } from 'lucide-react';
  */
 export function HistoryHeader() {
   return (
-    <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-20 border-b border-outline pb-20">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-t00 text-t00 text-on-surface tracking-tight text-balance">
+    <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-outline pb-4">
+      <div className="flex flex-col gap-0.5">
+        <h1 className="font-t01 text-t01 text-on-surface tracking-tight text-balance">
           Chat History
         </h1>
         <p className="font-t04 text-t04 text-on-surface-variant text-pretty">
-          Revisit, audit, and resume citation-grounded conversations across your corporate repository.
+          Review and continue your past conversations.
         </p>
       </div>
 
       <Link
         to="/chat"
-        className="inline-flex items-center justify-center gap-2 px-20 py-2.5 rounded-md bg-secondary text-on-secondary font-t04 text-t04-medium hover:bg-primary hover:text-on-primary transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus shrink-0 self-start sm:self-auto"
+        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-md bg-secondary text-on-secondary font-t04 text-t04-medium hover:bg-primary transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus shrink-0 self-start sm:self-auto"
       >
         <Plus className="w-4 h-4" aria-hidden="true" />
-        <span>New AI Chat</span>
+        <span>New Chat</span>
       </Link>
     </section>
   );

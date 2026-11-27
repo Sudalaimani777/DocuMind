@@ -78,7 +78,7 @@ describe('SearchView (Clause & Document Search Engine)', () => {
     });
     renderSearchView('/search');
     await waitFor(() => {
-      expect(screen.getByText(/Search your indexed repository/i)).toBeInTheDocument();
+      expect(screen.getByText(/Search your documents/i)).toBeInTheDocument();
     });
     expect(screen.queryByText(/FY26_AWS_Enterprise_Addendum/i)).not.toBeInTheDocument();
   });

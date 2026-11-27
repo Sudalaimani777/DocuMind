@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FolderOpen, Search, Trash2, Upload } from 'lucide-react';
+import { AlertTriangle, FolderOpen, RefreshCw, Search, Trash2, Upload } from 'lucide-react';
 import type { DocumentDTO, DocumentFormat, DocumentStatus } from '@documind/shared';
 import { FormatBadge, FormatIcon } from './FormatBadge';
 import { StatusBadge } from './StatusBadge';
@@ -11,6 +11,8 @@ interface DocumentTableProps {
   page: number;
   totalPages: number;
   isLoading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   searchQuery: string;
   fileTypeFilter: DocumentFormat | 'all';
   statusFilter: DocumentStatus | 'all';
@@ -35,6 +37,8 @@ export function DocumentTable({
   page,
   totalPages,
   isLoading,
+  isError = false,
+  onRetry,
   searchQuery,
   fileTypeFilter,
   statusFilter,
@@ -62,17 +66,17 @@ export function DocumentTable({
   return (
     <section
       aria-label="Document Catalog"
-      className="bg-surface border border-outline rounded-card p-20 flex flex-col gap-20"
+      className="bg-surface border border-outline rounded-md flex flex-col"
     >
       {/* Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-15">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-15 flex-1">
-          <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 border-b border-outline">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
+          <div className="relative flex-1 max-w-sm">
             <label htmlFor="doc-search-input" className="sr-only">
               Search documents by title
             </label>
             <Search
-              className="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              className="w-3.5 h-3.5 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
               aria-hidden="true"
             />
             <input
@@ -80,12 +84,12 @@ export function DocumentTable({
               type="search"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search documents by title..."
-              className="w-full pl-9 pr-3 py-2 rounded-md bg-surface border border-outline text-on-surface placeholder:text-on-surface-variant font-t04 text-t04 focus:outline-none focus:border-outline-focus focus:ring-1 focus:ring-outline-focus"
+              placeholder="Filter by title..."
+              className="w-full pl-8 pr-3 py-1.5 rounded-md bg-surface border border-outline text-on-surface placeholder:text-on-surface-variant font-t04 text-t04 focus:outline-none focus:border-outline-focus focus:ring-1 focus:ring-outline-focus"
             />
           </div>
 
-          <div className="sm:w-40">
+          <div className="sm:w-36">
             <label htmlFor="format-filter" className="sr-only">
               Filter by format
             </label>
@@ -95,7 +99,7 @@ export function DocumentTable({
               onChange={(e) =>
                 onFileTypeChange(e.target.value as DocumentFormat | 'all')
               }
-              className="w-full px-3 py-2 rounded-md bg-surface border border-outline text-on-surface font-t04 text-t04 focus:outline-none focus:border-outline-focus focus:ring-1 focus:ring-outline-focus"
+              className="w-full px-2.5 py-1.5 rounded-md bg-surface border border-outline text-on-surface font-t04 text-t04 focus:outline-none focus:border-outline-focus focus:ring-1 focus:ring-outline-focus"
             >
               <option value="all">All Formats</option>
               <option value="pdf">PDF</option>
@@ -105,7 +109,7 @@ export function DocumentTable({
             </select>
           </div>
 
-          <div className="sm:w-40">
+          <div className="sm:w-36">
             <label htmlFor="status-filter" className="sr-only">
               Filter by status
             </label>
@@ -115,7 +119,7 @@ export function DocumentTable({
               onChange={(e) =>
                 onStatusChange(e.target.value as DocumentStatus | 'all')
               }
-              className="w-full px-3 py-2 rounded-md bg-surface border border-outline text-on-surface font-t04 text-t04 focus:outline-none focus:border-outline-focus focus:ring-1 focus:ring-outline-focus"
+              className="w-full px-2.5 py-1.5 rounded-md bg-surface border border-outline text-on-surface font-t04 text-t04 focus:outline-none focus:border-outline-focus focus:ring-1 focus:ring-outline-focus"
             >
               <option value="all">All Statuses</option>
               <option value="completed">Ready</option>
@@ -127,60 +131,85 @@ export function DocumentTable({
         </div>
 
         <span className="font-t05 text-t05 text-on-surface-variant tabular-nums">
-          Showing {visibleDocs.length} of {totalItems} documents
+          {visibleDocs.length} of {totalItems} documents
         </span>
       </div>
 
-      {/* Content states: Loading / True Empty / Filter Empty / Table */}
+      {/* Content states: Loading / Error / True Empty / Filter Empty / Table */}
       {isLoading ? (
-        <div className="border border-outline rounded-md divide-y divide-outline">
+        <div className="divide-y divide-outline">
           {SKELETON_ROWS.map((row) => (
-            <div key={row} className="p-15 flex items-center justify-between gap-15 animate-pulse">
+            <div key={row} className="p-3.5 flex items-center justify-between gap-4 animate-pulse">
               <div className="h-4 w-56 bg-surface-subtle rounded" />
               <div className="h-4 w-24 bg-surface-subtle rounded" />
               <div className="h-4 w-20 bg-surface-subtle rounded" />
             </div>
           ))}
         </div>
+      ) : isError ? (
+        <div
+          role="alert"
+          className="m-3.5 bg-status-failed-bg border border-status-failed-border rounded-md p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        >
+          <div className="flex items-start gap-2.5 text-status-failed-text">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="flex flex-col gap-0.5">
+              <span className="font-t04 text-t04 font-semibold">Unable to load documents</span>
+              <span className="font-t05 text-t05 font-normal">
+                Check your connection or try refreshing the list.
+              </span>
+            </div>
+          </div>
+          {onRetry ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface border border-outline text-on-surface hover:bg-surface-subtle font-t05 text-t05 shrink-0"
+            >
+              <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Retry</span>
+            </button>
+          ) : null}
+        </div>
       ) : visibleDocs.length === 0 ? (
-        <div className="border border-dashed border-outline rounded-md py-48 px-20 flex flex-col items-center justify-center text-center gap-15">
-          <span className="w-12 h-12 rounded-card bg-surface-subtle text-on-surface-variant flex items-center justify-center">
-            <FolderOpen className="w-6 h-6" aria-hidden="true" />
+        <div className="py-12 px-5 flex flex-col items-center justify-center text-center gap-3">
+          <span className="w-10 h-10 rounded-md bg-surface-subtle text-on-surface-variant flex items-center justify-center">
+            <FolderOpen className="w-5 h-5" aria-hidden="true" />
           </span>
           {hasActiveFilters ? (
             <>
               <div className="flex flex-col gap-1">
-                <h3 className="font-t03 text-t03 text-on-surface">
-                  No documents match your current filters
+                <h3 className="font-t04 text-t04 font-semibold text-on-surface">
+                  No documents match your filters
                 </h3>
-                <p className="font-t04 text-t04 text-on-surface-variant">
-                  Try adjusting your search term, format filter, or status filter.
+                <p className="font-t05 text-t05 text-on-surface-variant font-normal">
+                  Try adjusting your search term, format, or status filter.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onClearFilters}
-                className="px-20 py-2 rounded-md border border-outline bg-surface text-on-surface hover:bg-surface-subtle font-t04 text-t04-medium transition-colors duration-instant ease-instant"
+                className="px-3.5 py-1.5 rounded-md border border-outline bg-surface text-on-surface hover:bg-surface-subtle font-t04 text-t04-medium transition-colors duration-instant ease-instant"
               >
                 Clear filters
               </button>
             </>
           ) : (
             <>
-              <div className="flex flex-col gap-1 max-w-md">
-                <h3 className="font-t03 text-t03 text-on-surface">
-                  No documents uploaded yet
+              <div className="flex flex-col gap-1 max-w-sm">
+                <h3 className="font-t04 text-t04 font-semibold text-on-surface">
+                  No documents yet
                 </h3>
-                <p className="font-t04 text-t04 text-on-surface-variant text-pretty">
-                  Drop a PDF, Word, Excel, or PowerPoint file above to begin indexing chunks and 768-dim vector embeddings.
+                <p className="font-t05 text-t05 text-on-surface-variant font-normal text-pretty">
+                  Upload a PDF, Word, Excel, or PowerPoint file above to search and chat with its contents.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onUploadClick}
-                className="inline-flex items-center gap-2 px-20 py-2.5 rounded-md bg-secondary text-on-secondary hover:bg-primary hover:text-on-primary font-t04 text-t04-medium transition-colors duration-instant ease-instant"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-secondary text-on-secondary hover:bg-primary font-t04 text-t04-medium transition-colors duration-instant ease-instant"
               >
-                <Upload className="w-4 h-4" aria-hidden="true" />
+                <Upload className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Upload Documents</span>
               </button>
             </>
@@ -188,29 +217,29 @@ export function DocumentTable({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto border border-outline rounded-md">
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-outline bg-surface-subtle">
-                  <th scope="col" className="px-3 py-3 font-t05 text-t05 text-on-surface whitespace-nowrap">
+                <tr className="border-b border-outline bg-surface-subtle/60">
+                  <th scope="col" className="px-3.5 py-2.5 font-t05 text-t05 text-on-surface-variant whitespace-nowrap">
                     Document
                   </th>
-                  <th scope="col" className="px-3 py-3 font-t05 text-t05 text-on-surface whitespace-nowrap">
+                  <th scope="col" className="px-3.5 py-2.5 font-t05 text-t05 text-on-surface-variant whitespace-nowrap">
                     Format
                   </th>
-                  <th scope="col" className="px-3 py-3 font-t05 text-t05 text-on-surface whitespace-nowrap">
-                    Chunks
+                  <th scope="col" className="px-3.5 py-2.5 font-t05 text-t05 text-on-surface-variant whitespace-nowrap">
+                    Sections
                   </th>
-                  <th scope="col" className="px-3 py-3 font-t05 text-t05 text-on-surface whitespace-nowrap">
+                  <th scope="col" className="px-3.5 py-2.5 font-t05 text-t05 text-on-surface-variant whitespace-nowrap">
                     Size
                   </th>
-                  <th scope="col" className="px-3 py-3 font-t05 text-t05 text-on-surface whitespace-nowrap">
+                  <th scope="col" className="px-3.5 py-2.5 font-t05 text-t05 text-on-surface-variant whitespace-nowrap">
                     Status
                   </th>
-                  <th scope="col" className="px-3 py-3 font-t05 text-t05 text-on-surface whitespace-nowrap">
+                  <th scope="col" className="px-3.5 py-2.5 font-t05 text-t05 text-on-surface-variant whitespace-nowrap">
                     Uploaded
                   </th>
-                  <th scope="col" className="px-3 py-3 font-t05 text-t05 text-on-surface text-right whitespace-nowrap">
+                  <th scope="col" className="px-3.5 py-2.5 font-t05 text-t05 text-on-surface-variant text-right whitespace-nowrap">
                     Actions
                   </th>
                 </tr>
@@ -235,8 +264,8 @@ export function DocumentTable({
                     <td className="px-3 py-3 whitespace-nowrap">
                       <FormatBadge fileType={doc.fileType} />
                     </td>
-                    <td className="px-3 py-3 font-t05 text-t05 text-on-surface-variant tabular-nums whitespace-nowrap">
-                      {doc.chunkCount} chunks
+                    <td className="px-3.5 py-2.5 font-t05 text-t05 text-on-surface-variant tabular-nums whitespace-nowrap">
+                      {doc.chunkCount}
                     </td>
                     <td className="px-3 py-3 font-mono text-mono-sm text-on-surface-variant tabular-nums whitespace-nowrap">
                       {formatFileSize(doc.fileSize)}

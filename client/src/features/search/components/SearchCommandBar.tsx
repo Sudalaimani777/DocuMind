@@ -21,11 +21,11 @@ export function SearchCommandBar({ onSubmitQuery }: SearchCommandBarProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-surface border border-outline rounded-card p-15 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-15"
+      className="bg-surface border border-outline rounded-md p-1.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 focus-within:border-outline-focus focus-within:ring-1 focus-within:ring-outline-focus"
     >
       <div className="relative flex-1 flex items-center">
         <label htmlFor="clause-query-input" className="sr-only">
-          Search clauses and documents
+          Search documents
         </label>
         <Search
           className="w-4 h-4 text-on-surface-variant absolute left-3 pointer-events-none"
@@ -37,15 +37,15 @@ export function SearchCommandBar({ onSubmitQuery }: SearchCommandBarProps) {
           role="searchbox"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Ask a natural language question or enter an exact clause code (e.g., Clause 8.2)..."
-          className="w-full pl-10 pr-3 py-2.5 rounded-md border-0 bg-surface text-on-surface placeholder:text-on-surface-variant font-t03 text-t03 focus:outline-none focus:ring-0"
+          placeholder="Ask a question or enter a phrase (e.g., termination notice)..."
+          className="w-full pl-9 pr-3 py-1.5 rounded-md border-0 bg-surface text-on-surface placeholder:text-on-surface-variant font-t04 text-t04 focus:outline-none focus:ring-0"
         />
       </div>
       <button
         type="submit"
-        className="inline-flex items-center justify-center gap-2 px-20 py-15 min-h-[48px] rounded-md bg-secondary text-on-secondary font-t03 text-t03 hover:bg-primary hover:text-on-primary active:scale-[0.98] transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus shrink-0"
+        className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-md bg-secondary text-on-secondary font-t04 text-t04-medium hover:bg-primary active:scale-[0.98] transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus shrink-0"
       >
-        <span>Search Repository</span>
+        <span>Search</span>
       </button>
     </form>
   );

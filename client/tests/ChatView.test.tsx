@@ -107,7 +107,7 @@ describe('ChatView (Stitch Editorial RAG Assistant & Source Verification)', () =
     renderChatView('/chat');
 
     const input = await screen.findByPlaceholderText(
-      /Ask a follow-up across your corporate documents/i
+      /Ask a question about your documents/i
     );
     await user.type(input, 'What was Q3 revenue growth?{Enter}');
 
@@ -144,7 +144,7 @@ describe('ChatView (Stitch Editorial RAG Assistant & Source Verification)', () =
     renderChatView('/chat');
 
     const input = await screen.findByPlaceholderText(
-      /Ask a follow-up across your corporate documents/i
+      /Ask a question about your documents/i
     );
     await user.type(input, 'Summarize revenue{Enter}');
 
@@ -153,20 +153,18 @@ describe('ChatView (Stitch Editorial RAG Assistant & Source Verification)', () =
     });
     await user.click(citationButton);
 
-    const inspector = screen.getByRole('complementary', {
-      name: /Source Verification Inspector/i,
-    });
-    const scoped = within(inspector);
-    expect(scoped.getByText('Citation [1]')).toBeInTheDocument();
+    const drawer = await screen.findByRole('dialog');
+    const scoped = within(drawer);
+    expect(scoped.getByText('Source Citation [1]')).toBeInTheDocument();
     expect(scoped.getAllByText('Q3 Financial Report').length).toBeGreaterThan(0);
-    expect(scoped.getByText('0.92 match')).toBeInTheDocument();
+    expect(scoped.getByText('92%')).toBeInTheDocument();
     expect(scoped.getByText('Page 4')).toBeInTheDocument();
     expect(scoped.getByText(/Revenue grew 24% YoY\./i)).toBeInTheDocument();
 
     // Verify DOMPurify stripped dangerous tags and event attributes
-    expect(inspector.querySelector('script')).toBeNull();
-    expect(inspector.innerHTML).not.toContain('onerror');
-    expect(inspector.innerHTML).not.toContain('alert("xss")');
+    expect(drawer.querySelector('script')).toBeNull();
+    expect(drawer.innerHTML).not.toContain('onerror');
+    expect(drawer.innerHTML).not.toContain('alert("xss")');
   });
 
   it('resets active session when switching to Single Specific Document and selecting a document', async () => {
@@ -191,7 +189,7 @@ describe('ChatView (Stitch Editorial RAG Assistant & Source Verification)', () =
     renderChatView('/chat');
 
     const singleTab = await screen.findByRole('tab', {
-      name: /Single Specific Document/i,
+      name: /Single Document/i,
     });
     await user.click(singleTab);
 
@@ -255,7 +253,7 @@ describe('ChatView (Stitch Editorial RAG Assistant & Source Verification)', () =
     renderChatView('/chat');
 
     const input = await screen.findByPlaceholderText(
-      /Ask a follow-up across your corporate documents/i
+      /Ask a question about your documents/i
     );
     await user.type(input, 'Tell me everything{Enter}');
 
@@ -270,33 +268,6 @@ describe('ChatView (Stitch Editorial RAG Assistant & Source Verification)', () =
     expect(screen.getByText(/Partial streamed answer/i)).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(useChatStore.getState().isStreaming).toBe(false);
-  });
-
-  it('submits a starter prompt when clicked from the Try links', async () => {
-    const user = userEvent.setup();
-    const streamSpy = vi
-      .spyOn(chatApi, 'streamRagChat')
-      .mockImplementation(async (_payload, handlers) => {
-        handlers.onToken('Key obligations include confidentiality.');
-        handlers.onDone({ sessionId: 'sess-starter', messageId: 'msg-starter' });
-      });
-
-    renderChatView('/chat');
-
-    const starterBtn = await screen.findByRole('button', {
-      name: /Compare obligations and risks across documents/i,
-    });
-    await user.click(starterBtn);
-
-    await waitFor(() => {
-      expect(streamSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          query: 'Compare obligations and risks across documents',
-        }),
-        expect.any(Object),
-        expect.any(AbortSignal)
-      );
-    });
   });
 
   it('initializes /chat/:documentId with Single Specific Document active and passes documentId to streamRagChat', async () => {
@@ -315,7 +286,7 @@ describe('ChatView (Stitch Editorial RAG Assistant & Source Verification)', () =
     await screen.findByRole('option', { name: 'Q3 Financial Report' });
     expect(scopeSelect.value).toBe(docId);
 
-    const input = screen.getByPlaceholderText(/Ask a follow-up across your corporate documents/i);
+    const input = screen.getByPlaceholderText(/Ask a question about your documents/i);
     await user.type(input, 'What is inside this report?{Enter}');
 
     await waitFor(() => {
@@ -328,5 +299,45 @@ describe('ChatView (Stitch Editorial RAG Assistant & Source Verification)', () =
         expect.any(AbortSignal)
       );
     });
+  });
+
+  it('renders Markdown bold, bullet lists, inline code, and grouped [1, 2] citations without infinite-looping', async () => {
+    const secondCitation: CitationDTO = {
+      ...SAMPLE_CITATION,
+      index: 2,
+      chunkId: 'chunk-2',
+      documentTitle: 'Master Services Agreement',
+    };
+
+    vi.spyOn(chatApi, 'fetchChatMessages').mockResolvedValue([
+      {
+        id: 'm-md-1',
+        sessionId: 'sess-md-1',
+        role: 'user',
+        content: 'What are the colors?',
+        citations: [],
+        createdAt: '2026-11-26T09:00:00.000Z',
+      },
+      {
+        id: 'm-md-2',
+        sessionId: 'sess-md-1',
+        role: 'assistant',
+        content:
+          '**Primary Colors:**\n* **Primary:** `#FF385C` [1, 2]\n* *Secondary:* `#E00B41`',
+        citations: [SAMPLE_CITATION, secondCitation],
+        createdAt: '2026-11-26T09:00:05.000Z',
+      },
+    ]);
+
+    renderChatView('/chat?sessionId=sess-md-1');
+
+    expect(await screen.findByText('Primary Colors:')).toBeInTheDocument();
+    expect(screen.getByText('#FF385C').tagName).toBe('CODE');
+    expect(
+      screen.getByRole('button', { name: /Inspect citation 1: Q3 Financial Report/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Inspect citation 2: Master Services Agreement/i })
+    ).toBeInTheDocument();
   });
 });

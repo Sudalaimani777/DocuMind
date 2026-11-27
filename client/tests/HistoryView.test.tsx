@@ -111,21 +111,12 @@ describe('HistoryView (Stitch Two-Column Chat History)', () => {
     expect(screen.getByText('Liability Cap Clauses')).toBeInTheDocument();
 
     // Scope pills
-    expect(screen.getAllByText('Corporate Knowledge Base').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('All Documents').length).toBeGreaterThan(0);
     expect(screen.getByText('Master Services Agreement')).toBeInTheDocument();
 
     // Message counts
     expect(screen.getAllByText(/6 messages/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/1 message\b/i)).toBeInTheDocument();
-
-    // Session Preview loads assistant summary & referenced document
-    const preview = screen.getByRole('complementary', { name: /Session Preview/i });
-    await waitFor(() => {
-      expect(
-        within(preview).getByText(/Q3 revenue grew 24% YoY across EMEA/i)
-      ).toBeInTheDocument();
-      expect(within(preview).getByText(/Q3_Report\.pdf \(p\.4\)/i)).toBeInTheDocument();
-    });
 
     const timeElements = document.querySelectorAll('time');
     expect(timeElements.length).toBeGreaterThanOrEqual(2);
@@ -150,8 +141,8 @@ describe('HistoryView (Stitch Two-Column Chat History)', () => {
     expect(screen.queryByText('Q3 Revenue Summary Across Reports')).not.toBeInTheDocument();
     expect(screen.getAllByText('Liability Cap Clauses').length).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole('tab', { name: /All Sessions/i }));
-    const searchInput = screen.getByPlaceholderText(/Filter past threads or files/i);
+    await user.click(screen.getByRole('tab', { name: /All Chats/i }));
+    const searchInput = screen.getByPlaceholderText(/Filter conversations/i);
     await user.type(searchInput, 'Revenue');
     expect(screen.queryByText('Liability Cap Clauses')).not.toBeInTheDocument();
     expect(screen.getAllByText('Q3 Revenue Summary Across Reports').length).toBeGreaterThan(0);
@@ -172,7 +163,9 @@ describe('HistoryView (Stitch Two-Column Chat History)', () => {
     const { unmount } = renderHistoryView();
 
     await screen.findByText('Liability Cap Clauses');
-    await user.click(screen.getByRole('button', { name: /Resume Thread/i }));
+    await user.click(
+      screen.getByRole('button', { name: /Resume Q3 Revenue Summary Across Reports/i })
+    );
     expect(await screen.findByTestId('navigated-location')).toHaveTextContent(
       '/chat?sessionId=sess-global-1'
     );
@@ -180,9 +173,10 @@ describe('HistoryView (Stitch Two-Column Chat History)', () => {
     unmount();
 
     renderHistoryView();
-    const secondCard = await screen.findByRole('button', { name: /Liability Cap Clauses/i });
-    await user.click(secondCard);
-    await user.click(screen.getByRole('button', { name: /Resume Thread/i }));
+    await screen.findByText('Liability Cap Clauses');
+    await user.click(
+      screen.getByRole('button', { name: /Resume Liability Cap Clauses/i })
+    );
 
     expect(await screen.findByTestId('navigated-location')).toHaveTextContent(
       '/chat/doc-1111-2222?sessionId=sess-doc-2'

@@ -44,18 +44,18 @@ export function SourceVerificationPanel({
   return (
     <aside
       aria-label="Source Verification Inspector"
-      className="lg:col-span-5 lg:sticky lg:top-24 bg-surface-subtle border border-outline rounded-card p-20 flex flex-col gap-20"
+      className="lg:col-span-5 lg:sticky lg:top-16 bg-surface-subtle/60 border border-outline rounded-md p-4 flex flex-col gap-3.5"
     >
-      <header className="flex items-center justify-between gap-15 border-b border-outline pb-15">
+      <header className="flex items-center justify-between gap-3 border-b border-outline pb-2.5">
         <div className="flex flex-col">
-          <h2 className="font-t03 text-t03 text-on-surface">Source Verification</h2>
-          <span className="font-t05 text-t05 text-on-surface-variant">
+          <h2 className="font-t04 text-t04 font-semibold text-on-surface">Sources</h2>
+          <span className="font-t05 text-t05 text-on-surface-variant font-normal">
             {citations.length > 0
-              ? `Click any citation [1–${citations.length}] to inspect`
-              : 'Citations appear here as answers stream'}
+              ? `Click any reference [1–${citations.length}] to inspect`
+              : 'References appear here as answers stream'}
           </span>
         </div>
-        <span className="font-mono text-mono-sm text-on-surface-variant">{sourceCountLabel}</span>
+        <span className="font-t05 text-t05 text-on-surface-variant tabular-nums">{sourceCountLabel}</span>
       </header>
 
       {selected ? (
@@ -124,10 +124,10 @@ export function SourceVerificationPanel({
           </div>
         </>
       ) : (
-        <div className="bg-surface border border-outline rounded-md p-20 flex flex-col gap-1 text-center">
-          <p className="font-t04 text-t04-medium text-on-surface">No sources cited yet</p>
-          <p className="font-t05 text-t05 text-on-surface-variant">
-            Ask a question to inspect verbatim document excerpts and coordinates.
+        <div className="bg-surface border border-outline rounded-md p-4 flex flex-col gap-1 text-center">
+          <p className="font-t04 text-t04-medium text-on-surface">No sources yet</p>
+          <p className="font-t05 text-t05 text-on-surface-variant font-normal">
+            Ask a question to inspect the exact passages used in each answer.
           </p>
         </div>
       )}

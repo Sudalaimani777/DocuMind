@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Check, Link as LinkIcon } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import type { DocumentFormat, SearchMode } from '@documind/shared';
 import { cn } from '../../../core/lib/utils';
 import { fetchDocuments } from '../../documents/api/documents.api';
+import { documentQueryKeys } from '../../documents/hooks/useDocuments';
 import { BrowseDocumentsFeed } from '../components/BrowseDocumentsFeed';
 import { SearchCommandBar } from '../components/SearchCommandBar';
 import { SearchFiltersSidebar, type DatePreset } from '../components/SearchFiltersSidebar';
@@ -17,18 +18,18 @@ import { useSearchStore } from '../store/searchStore';
 const MODE_OPTIONS: Array<{ id: SearchMode; label: string; description: string }> = [
   {
     id: 'hybrid',
-    label: 'Hybrid Search (RRF)',
-    description: 'Combining keyword BM25 + vector similarity via Reciprocal Rank Fusion.',
+    label: 'Smart Search',
+    description: 'Combines keyword matching and meaning for the best results.',
   },
   {
     id: 'semantic',
-    label: 'Semantic Match',
-    description: 'Finding conceptual meaning even when exact words differ.',
+    label: 'By Meaning',
+    description: 'Finds related concepts even when exact words differ.',
   },
   {
     id: 'keyword',
-    label: 'Exact Clause',
-    description: 'Strict full-text matching for exact contract codes, clause numbers, and names.',
+    label: 'Exact Text',
+    description: 'Matches exact clause numbers, codes, and phrases.',
   },
 ];
 
@@ -42,7 +43,6 @@ function datePresetToStartIso(preset: DatePreset): string {
  * Clause & Document Search Engine (/search).
  */
 export function SearchView() {
-  const [copiedLink, setCopiedLink] = useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
   const [minConfidence, setMinConfidence] = useState<number>(0);
   const [selectedFormats, setSelectedFormats] = useState<DocumentFormat[]>([
@@ -84,7 +84,11 @@ export function SearchView() {
   });
 
   const browseDocsQuery = useQuery({
-    queryKey: ['search-browse-docs', format ?? 'all'],
+    queryKey: documentQueryKeys.list({
+      status: 'completed',
+      limit: 50,
+      ...(format ? { fileType: format } : {}),
+    }),
     queryFn: () =>
       fetchDocuments({
         status: 'completed',
@@ -92,7 +96,8 @@ export function SearchView() {
         ...(format ? { fileType: format } : {}),
       }),
     enabled: !hasQuery && effectiveSelectedFormats.length > 0,
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const filteredBrowseDocs = useMemo(() => {
@@ -147,16 +152,6 @@ export function SearchView() {
     resetStoreFilters();
   };
 
-  const handleCopyShareLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopiedLink(true);
-      window.setTimeout(() => setCopiedLink(false), 1500);
-    } catch {
-      // Clipboard API unavailable in restricted contexts
-    }
-  };
-
   const handleSubmit = () => {
     const currentQuery = useSearchStore.getState().query.trim();
     if (debouncedQuery.trim() === currentQuery && currentQuery.length > 0) {
@@ -166,37 +161,25 @@ export function SearchView() {
 
   return (
     <>
-      <section className="flex flex-col gap-20">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-15">
-          <div className="flex flex-col gap-1">
-            <h1 className="font-t00 text-t00 text-on-surface tracking-tight text-balance">
-              Clause &amp; Document Search Engine
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+          <div className="flex flex-col gap-0.5">
+            <h1 className="font-t01 text-t01 text-on-surface tracking-tight text-balance">
+              Search Documents
             </h1>
             <p className="font-t04 text-t04 text-on-surface-variant text-pretty">
-              Sub-second hybrid search across verified clauses, tables, and slides without opening files.
+              Find clauses, tables, and slides across your uploaded files.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => void handleCopyShareLink()}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-surface text-on-surface border border-outline hover:bg-surface-subtle font-t05 text-t05 transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus self-start md:self-auto shrink-0"
-          >
-            {copiedLink ? (
-              <Check className="w-3.5 h-3.5 text-status-ready-text" aria-hidden="true" />
-            ) : (
-              <LinkIcon className="w-3.5 h-3.5" aria-hidden="true" />
-            )}
-            <span>{copiedLink ? 'Copied!' : 'Copy Link'}</span>
-          </button>
         </div>
 
         <SearchCommandBar onSubmitQuery={handleSubmit} />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-15">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div
             role="tablist"
             aria-label="Search Mode"
-            className="inline-flex flex-wrap items-center gap-1 p-1 rounded-soft bg-surface-subtle border border-outline self-start"
+            className="inline-flex flex-wrap items-center gap-1 p-1 rounded-md bg-surface-subtle border border-outline self-start"
           >
             {MODE_OPTIONS.map((opt) => {
               const isSelected = mode === opt.id;
@@ -208,9 +191,9 @@ export function SearchView() {
                   aria-selected={isSelected}
                   onClick={() => setMode(opt.id)}
                   className={cn(
-                    'px-15 py-2 rounded-soft font-t04 text-t04-medium transition-colors duration-standard ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
+                    'px-3 py-1 rounded-md font-t05 text-t05 transition-colors duration-standard ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
                     isSelected
-                      ? 'bg-surface text-on-surface shadow-sm'
+                      ? 'bg-surface text-on-surface shadow-xs'
                       : 'text-on-surface-variant hover:text-on-surface'
                   )}
                 >
@@ -222,7 +205,7 @@ export function SearchView() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-20 items-start">
+      <section className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5 items-start">
         <SearchFiltersSidebar
           selectedFormats={effectiveSelectedFormats}
           datePreset={datePreset}
@@ -270,9 +253,11 @@ export function SearchView() {
             <BrowseDocumentsFeed
               documents={filteredBrowseDocs}
               isLoading={browseDocsQuery.isLoading}
+              isError={browseDocsQuery.isError}
               hasActiveFilters={hasActiveFilters}
               onScopeDocument={setDocumentId}
               onResetFilters={handleResetAllFilters}
+              onRetry={() => void browseDocsQuery.refetch()}
             />
           ) : (
             <SearchResultsFeed

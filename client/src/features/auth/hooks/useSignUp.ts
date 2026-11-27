@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '../../../components/ui/toast';
 import type { SignupInput } from '@documind/shared';
 import { extractApiErrorMessage } from '../../../core/api/client';
 import { useAuthStore } from '../../../core/store/authStore';

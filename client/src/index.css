@@ -4,7 +4,7 @@
 
 :root {
   --color-primary: #ff385c;
-  --color-secondary: #c80739;
+  --color-secondary: #e00b41;
   --color-on-surface: #222222;
   --color-on-surface-variant: #6a6a6a;
   --color-surface: #ffffff;
@@ -18,4 +18,11 @@ body {
   background-color: var(--color-surface);
   color: var(--color-on-surface);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+::selection {
+  background-color: rgba(255, 56, 92, 0.16);
+  color: #222222;
 }

@@ -1,7 +1,19 @@
-import { Fragment, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Info } from 'lucide-react';
 import type { CitationDTO } from '@documind/shared';
+import {
+  Citations,
+  type CitationItem,
+} from '../../../components/ui/citations';
+import {
+  MessageBubble,
+  MessageBubbleContent,
+  MessageBubbleGroup,
+} from '../../../components/ui/message-bubble';
+import { formatCoordinates } from '../../../core/lib/formatCoordinates';
 import { cn } from '../../../core/lib/utils';
+import { FormatIcon } from '../../documents/components/FormatBadge';
+import { MarkdownWithCitations } from './MarkdownWithCitations';
 
 interface ChatTurnItemProps {
   userName: string;
@@ -14,62 +26,10 @@ interface ChatTurnItemProps {
   onSelectCitation: (citation: CitationDTO) => void;
 }
 
-type ContentSegment =
-  | { type: 'text'; value: string }
-  | { type: 'citation'; citation: CitationDTO };
-
 const REFUSAL_PREFIX = 'the provided documents do not contain information';
 
-function parseCitationSegments(
-  content: string,
-  citations: CitationDTO[]
-): { segments: ContentSegment[]; unreferencedCitations: CitationDTO[] } {
-  const citationMap = new Map<number, CitationDTO>();
-  for (const citation of citations) {
-    citationMap.set(citation.index, citation);
-  }
-
-  const referencedIndices = new Set<number>();
-  const segments: ContentSegment[] = [];
-  const regex = /\[(\d+)\]/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = regex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({
-        type: 'text',
-        value: content.slice(lastIndex, match.index),
-      });
-    }
-
-    const citationIndex = Number(match[1]);
-    const matchedCitation = citationMap.get(citationIndex);
-
-    if (matchedCitation) {
-      referencedIndices.add(citationIndex);
-      segments.push({ type: 'citation', citation: matchedCitation });
-    } else {
-      segments.push({ type: 'text', value: match[0] });
-    }
-
-    lastIndex = regex.lastIndex;
-  }
-
-  if (lastIndex < content.length) {
-    segments.push({
-      type: 'text',
-      value: content.slice(lastIndex),
-    });
-  }
-
-  const unreferencedCitations = citations.filter((c) => !referencedIndices.has(c.index));
-  return { segments, unreferencedCitations };
-}
-
 /**
- * Editorial Q&A turn matching the Stitch research workspace:
- * left-bordered user question header + grounded synthesis with inline `[k]` links.
+ * Conversational Q&A turn using themed MessageBubble surfaces and collapsible Citations list.
  */
 export function ChatTurnItem({
   userName,
@@ -87,88 +47,80 @@ export function ChatTurnItem({
     safeAssistantText.trim().toLowerCase().startsWith(REFUSAL_PREFIX) &&
     citations.length === 0;
 
-  const { segments, unreferencedCitations } = useMemo(
-    () => parseCitationSegments(safeAssistantText, citations),
-    [safeAssistantText, citations]
-  );
+  const citationItems = useMemo<CitationItem[]>(() => {
+    return citations.map((citation) => ({
+      id: citation.chunkId,
+      index: citation.index,
+      title: citation.documentTitle,
+      domain: `${formatCoordinates(citation.coordinates)} · ${Math.round(citation.similarity * 100)}% match`,
+      icon: <FormatIcon fileType={citation.fileType} />,
+      onClick: () => onSelectCitation(citation),
+    }));
+  }, [citations, onSelectCitation]);
 
   return (
     <article
       className={cn(
-        'flex flex-col gap-20',
-        !isFirst && 'pt-20 border-t border-outline'
+        'flex flex-col gap-3',
+        !isFirst && 'pt-4 border-t border-outline'
       )}
     >
-      <header
-        className={cn(
-          'border-l-2 pl-15 py-1 flex flex-col gap-1',
-          isRefusal ? 'border-outline' : 'border-primary'
-        )}
-      >
-        <span className="font-t05 text-t05 text-on-surface-variant">
-          {userName} · {timestampLabel}
-        </span>
-        <h2
-          className={cn(
-            'text-on-surface text-balance',
-            isFirst ? 'font-t02 text-t02' : 'font-t03 text-t03'
-          )}
+      <MessageBubbleGroup spacing="default">
+        <div
+          data-slot="message"
+          data-from="user"
+          className="flex flex-col items-end gap-1"
         >
-          {userPrompt}
-        </h2>
-      </header>
-
-      {isRefusal ? (
-        <div className="bg-surface-subtle rounded-md p-15 flex items-start gap-15 max-w-prose">
-          <Info className="w-4 h-4 text-on-surface-variant shrink-0 mt-0.5" aria-hidden="true" />
-          <p className="font-t04 text-t04 text-on-surface">{safeAssistantText}</p>
+          <span className="font-t05 text-t05 text-on-surface-variant px-1">
+            {userName} · {timestampLabel}
+          </span>
+          <MessageBubble variant="solid" align="end" animateIn>
+            <MessageBubbleContent className="text-pretty">
+              {userPrompt}
+            </MessageBubbleContent>
+          </MessageBubble>
         </div>
-      ) : assistantContent !== null || isStreaming ? (
-        <div className="flex flex-col gap-15 font-t04 text-t04 text-on-surface max-w-prose">
-          <div className="whitespace-pre-wrap break-words leading-relaxed">
-            {segments.map((segment, idx) => {
-              if (segment.type === 'text') {
-                return <Fragment key={idx}>{segment.value}</Fragment>;
-              }
 
-              const { citation } = segment;
-              return (
-                <button
-                  key={`${citation.chunkId}-${idx}`}
-                  type="button"
-                  onClick={() => onSelectCitation(citation)}
-                  aria-label={`Inspect citation ${citation.index}: ${citation.documentTitle}`}
-                  className="inline-flex items-center font-mono text-mono-sm text-secondary underline underline-offset-2 hover:text-primary px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus"
-                >
-                  [{citation.index}]
-                </button>
-              );
-            })}
-            {isStreaming ? (
-              <span
-                className="inline-block w-2 h-4 ml-1 bg-secondary animate-pulse align-text-bottom"
-                aria-label="Streaming response"
-              />
+        {isRefusal ? (
+          <div data-slot="message" data-from="assistant">
+            <MessageBubble variant="outline" align="start">
+              <MessageBubbleContent className="flex items-start gap-2.5 max-w-[90%]">
+                <Info
+                  className="w-4 h-4 text-on-surface-variant shrink-0 mt-1"
+                  aria-hidden="true"
+                />
+                <p className="font-t04 text-t04 text-on-surface">{safeAssistantText}</p>
+              </MessageBubbleContent>
+            </MessageBubble>
+          </div>
+        ) : assistantContent !== null || isStreaming ? (
+          <div
+            data-slot="message"
+            data-from="assistant"
+            className="flex flex-col items-start gap-1.5"
+          >
+            <span className="font-t05 text-t05 text-on-surface-variant px-1">
+              DocuMind
+            </span>
+            <MessageBubble variant="soft" align="start">
+              <MessageBubbleContent className="max-w-[92%]">
+                <MarkdownWithCitations
+                  content={safeAssistantText}
+                  citations={citations}
+                  isStreaming={isStreaming}
+                  onSelectCitation={onSelectCitation}
+                />
+              </MessageBubbleContent>
+            </MessageBubble>
+
+            {citationItems.length > 0 ? (
+              <div className="w-full max-w-[92%] px-1">
+                <Citations citations={citationItems} />
+              </div>
             ) : null}
           </div>
-
-          {unreferencedCitations.length > 0 ? (
-            <div className="pt-2 flex flex-wrap items-center gap-2">
-              <span className="font-t05 text-t05 text-on-surface-variant">Sources:</span>
-              {unreferencedCitations.map((citation) => (
-                <button
-                  key={citation.chunkId}
-                  type="button"
-                  onClick={() => onSelectCitation(citation)}
-                  className="inline-flex items-center font-mono text-mono-sm text-secondary underline underline-offset-2 hover:text-primary px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus"
-                >
-                  [{citation.index}] {citation.documentTitle}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+        ) : null}
+      </MessageBubbleGroup>
     </article>
   );
 }

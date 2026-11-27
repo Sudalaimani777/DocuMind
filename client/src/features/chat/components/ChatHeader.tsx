@@ -27,14 +27,14 @@ export function ChatHeader({
   onNewChat,
 }: ChatHeaderProps) {
   return (
-    <section className="flex flex-col gap-20 border-b border-outline pb-20">
-      <div className="flex items-start justify-between gap-15">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-t00 text-t00 text-on-surface tracking-tight text-balance">
-            AI Document Assistant
+    <section className="flex flex-col gap-3.5 border-b border-outline pb-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="font-t01 text-t01 text-on-surface tracking-tight text-balance">
+            AI Assistant
           </h1>
           <p className="font-t04 text-t04 text-on-surface-variant text-pretty">
-            Citation-grounded synthesis across corporate contracts, balance sheets, and decks.
+            Ask questions across your documents with verified page references.
           </p>
         </div>
 
@@ -42,7 +42,7 @@ export function ChatHeader({
           <button
             type="button"
             onClick={onNewChat}
-            className="inline-flex items-center gap-1.5 px-15 py-2 rounded-md border border-outline bg-surface text-on-surface hover:bg-surface-subtle font-t04 text-t04-medium transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus shrink-0"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-outline bg-surface text-on-surface hover:bg-surface-subtle font-t04 text-t04-medium transition-colors duration-instant ease-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus shrink-0"
           >
             <MessageSquarePlus className="w-4 h-4" aria-hidden="true" />
             <span>New Chat</span>
@@ -50,12 +50,12 @@ export function ChatHeader({
         ) : null}
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-15">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-15">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div
             role="tablist"
             aria-label="Knowledge Scope"
-            className="inline-flex flex-wrap items-center gap-1 p-1 rounded-soft bg-surface-subtle border border-outline self-start"
+            className="inline-flex flex-wrap items-center gap-1 p-1 rounded-md bg-surface-subtle border border-outline self-start"
           >
             <button
               type="button"
@@ -63,13 +63,13 @@ export function ChatHeader({
               aria-selected={scopeMode === 'global'}
               onClick={onSelectGlobal}
               className={cn(
-                'px-15 py-2 rounded-soft font-t04 text-t04-medium transition-colors duration-standard ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
+                'px-3 py-1 rounded-md font-t05 text-t05 transition-colors duration-standard ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
                 scopeMode === 'global'
-                  ? 'bg-surface text-on-surface shadow-sm'
+                  ? 'bg-surface text-on-surface shadow-xs'
                   : 'text-on-surface-variant hover:text-on-surface'
               )}
             >
-              Entire Corporate Knowledge Base
+              All Documents
             </button>
             <button
               type="button"
@@ -77,18 +77,18 @@ export function ChatHeader({
               aria-selected={scopeMode === 'single'}
               onClick={onSelectSingleMode}
               className={cn(
-                'px-15 py-2 rounded-soft font-t04 text-t04-medium transition-colors duration-standard ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
+                'px-3 py-1 rounded-md font-t05 text-t05 transition-colors duration-standard ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline-focus',
                 scopeMode === 'single'
-                  ? 'bg-surface text-on-surface shadow-sm'
+                  ? 'bg-surface text-on-surface shadow-xs'
                   : 'text-on-surface-variant hover:text-on-surface'
               )}
             >
-              Single Specific Document
+              Single Document
             </button>
           </div>
 
           {scopeMode === 'single' ? (
-            <div className="sm:w-80">
+            <div className="sm:w-72">
               <label htmlFor="chat-document-scope" className="sr-only">
                 Select specific document
               </label>
@@ -97,7 +97,7 @@ export function ChatHeader({
                 aria-label="Document scope"
                 value={scopedDocumentId ?? ''}
                 onChange={(e) => onSelectDocument(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-surface border border-outline text-on-surface font-t04 text-t04 focus:outline-none focus:border-outline-focus focus:ring-1 focus:ring-outline-focus"
+                className="w-full px-2.5 py-1.5 rounded-md bg-surface border border-outline text-on-surface font-t04 text-t04 focus:outline-none focus:border-outline-focus focus:ring-1 focus:ring-outline-focus"
               >
                 <option value="">Select a document...</option>
                 {indexedDocuments.map((doc) => (
@@ -110,10 +110,10 @@ export function ChatHeader({
           ) : null}
         </div>
 
-        <span className="font-mono text-mono-sm text-on-surface-variant">
+        <span className="font-t05 text-t05 text-on-surface-variant tabular-nums">
           {scopeMode === 'single'
-            ? 'Single Document'
-            : `${indexedDocuments.length} indexed documents`}
+            ? 'Single document'
+            : `${indexedDocuments.length} ${indexedDocuments.length === 1 ? 'document' : 'documents'} ready`}
         </span>
       </div>
     </section>

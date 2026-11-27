@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import { toast } from 'sonner';
+import { toast } from '../../../components/ui/toast';
 import type { ApiErrorResponse, JobStage } from '@documind/shared';
 import { extractApiErrorMessage } from '../../../core/api/client';
 import { useAuthStore } from '../../../core/store/authStore';
@@ -25,6 +25,8 @@ export function useDocumentsQuery(filters: ListDocumentsParams) {
   return useQuery({
     queryKey: documentQueryKeys.list(filters),
     queryFn: () => fetchDocuments(filters),
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
@@ -75,7 +77,9 @@ export function useUploadDocumentsMutation() {
       }
     },
     onSuccess: (items) => {
-      toast.success(`${items.length} file(s) queued for ingestion.`);
+      toast.success(
+        `${items.length} ${items.length === 1 ? 'file' : 'files'} uploaded and processing.`
+      );
       void queryClient.invalidateQueries({ queryKey: documentQueryKeys.all });
     },
     onError: (err) => {
@@ -95,7 +99,7 @@ export function useDeleteDocumentMutation() {
   return useMutation({
     mutationFn: (documentId: string) => deleteDocument(documentId),
     onSuccess: () => {
-      toast.success('Document and vector embeddings deleted.');
+      toast.success('Document deleted.');
       closeDeleteDialog();
       void queryClient.invalidateQueries({ queryKey: documentQueryKeys.all });
     },

@@ -77,7 +77,7 @@ describe('LibraryView (Document Repository & Ingestion Hub)', () => {
 
     renderLibrary();
 
-    expect(await screen.findByText(/no documents uploaded yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no documents yet/i)).toBeInTheDocument();
     expect(screen.queryByText(/Duplicate detected/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/FY26_AWS_Enterprise_Addendum/i)).not.toBeInTheDocument();
   });
@@ -98,12 +98,12 @@ describe('LibraryView (Document Repository & Ingestion Hub)', () => {
     renderLibrary();
 
     expect(await screen.findByText('Enterprise_Addendum.pdf')).toBeInTheDocument();
-    expect(screen.getByText('12 chunks')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
 
-    const searchInput = screen.getByPlaceholderText(/search documents by title/i);
+    const searchInput = screen.getByPlaceholderText(/filter by title/i);
     await user.type(searchInput, 'nonexistent-query');
 
-    expect(await screen.findByText(/no documents match your current filters/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no documents match your filters/i)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /clear filters/i }));
     expect(await screen.findByText('Enterprise_Addendum.pdf')).toBeInTheDocument();
   });
